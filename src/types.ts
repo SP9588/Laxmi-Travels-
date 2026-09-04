@@ -144,6 +144,27 @@ export type PaymentStatus =
   | 'PARTIALLY_REFUNDED' 
   | 'SETTLED';
 
+export interface DriverDetails {
+  name: string;
+  phone: string;
+  licenseNumber?: string;
+  rating?: number;
+  assignedAt: string;
+  liveStatus?: 'ASSIGNED' | 'EN_ROUTE_TO_PICKUP' | 'ARRIVED_AT_PICKUP' | 'ON_TRIP';
+}
+
+export interface BookingNotification {
+  id: string;
+  type: 'BOOKING_CONFIRMED' | 'DRIVER_ASSIGNED' | 'STATUS_UPDATE' | 'TRIP_STARTED' | 'TRIP_COMPLETED';
+  title: string;
+  message: string;
+  bookingId: string;
+  timestamp: string;
+  driver?: DriverDetails;
+  status?: BookingStatus;
+  read?: boolean;
+}
+
 export interface FareCalculation {
   distanceKm: number;
   baseFare: number;
@@ -202,6 +223,7 @@ export interface Booking {
   completedAt?: string;
   rating?: number;
   reviewComment?: string;
+  driver?: DriverDetails;
 }
 
 export interface CommissionTransaction {

@@ -319,7 +319,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ onSwitchToAdminV
                   </div>
 
                   {/* Trip lifecycle buttons */}
-                  <div className="flex items-center gap-2 mt-2 justify-end">
+                  <div className="flex items-center gap-2 mt-2 justify-end flex-wrap">
                     {booking.status === 'REQUESTED' && (
                       <button
                         onClick={() => handleTripAction(booking.id, 'ACCEPT')}
@@ -328,7 +328,28 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ onSwitchToAdminV
                         Accept Ride
                       </button>
                     )}
-                    {booking.status === 'CONFIRMED' && (
+                    {(booking.status === 'CONFIRMED' || booking.status === 'ACCEPTED') && (
+                      <button
+                        onClick={async () => {
+                          await fetch(`/api/bookings/${booking.id}/assign-driver`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              name: 'Ramesh Singh Chauhan',
+                              phone: '+91 98711 44520',
+                              licenseNumber: 'DL-0420180099123',
+                              rating: 4.9,
+                              vehicleNumber: booking.vehicleNumber,
+                            }),
+                          });
+                          fetchOwnerData();
+                        }}
+                        className="px-3 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 text-xs font-bold rounded-lg"
+                      >
+                        Assign Chauffeur
+                      </button>
+                    )}
+                    {(booking.status === 'CONFIRMED' || booking.status === 'DRIVER_ASSIGNED') && (
                       <button
                         onClick={() => handleTripAction(booking.id, 'START_TRIP')}
                         className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg"

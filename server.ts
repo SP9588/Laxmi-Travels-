@@ -592,7 +592,78 @@ app.post('/api/fare/calculate', (req, res) => {
   });
 });
 
-// 9. Bookings
+// 9. Real-Time Booking Notifications System (Server-Sent Events)
+interface SSEClient {
+  id: string;
+  customerId?: string;
+  res: express.Response;
+}
+const sseClients: SSEClient[] = [];
+
+function broadcastBookingNotification(event: {
+  type: 'BOOKING_CONFIRMED' | 'DRIVER_ASSIGNED' | 'STATUS_UPDATE' | 'TRIP_STARTED' | 'TRIP_COMPLETED' | 'CANCELLED';
+  title: string;
+  message: string;
+  bookingId: string;
+  timestamp: string;
+  booking: any;
+  driver?: any;
+  status?: string;
+}) {
+  const payloadString = `data: ${JSON.stringify(event)}\n\n`;
+  for (let i = sseClients.length - 1; i >= 0; i--) {
+    const client = sseClients[i];
+    try {
+      client.res.write(payloadString);
+    } catch (err) {
+      sseClients.splice(i, 1);
+    }
+  }
+}
+
+// SSE subscription endpoint for real-time customer and fleet alerts
+app.get('/api/bookings/events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no'); // Disable proxy buffering
+  res.flushHeaders?.();
+
+  const clientId = 'client_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+  const customerId = req.query.customerId as string;
+
+  const client: SSEClient = { id: clientId, customerId, res };
+  sseClients.push(client);
+
+  // Immediate handshake message
+  res.write(`data: ${JSON.stringify({
+    type: 'CONNECTED',
+    clientId,
+    timestamp: new Date().toISOString(),
+    message: 'Real-time booking alert stream established.'
+  })}\n\n`);
+
+  // Heartbeat keep-alive every 20 seconds
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(': heartbeat\n\n');
+    } catch (err) {
+      clearInterval(heartbeat);
+      const idx = sseClients.findIndex((c) => c.id === clientId);
+      if (idx !== -1) sseClients.splice(idx, 1);
+    }
+  }, 20000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    const idx = sseClients.findIndex((c) => c.id === clientId);
+    if (idx !== -1) {
+      sseClients.splice(idx, 1);
+    }
+  });
+});
+
+// Bookings query
 app.get('/api/bookings', (req, res) => {
   const { customerId, ownerId } = req.query;
   let list = [...store.bookings];
@@ -695,10 +766,10 @@ app.post('/api/bookings', (req, res) => {
   res.status(201).json({ success: true, booking: newBooking });
 });
 
-// 10. Booking Action State Machine (ACCEPT, TRIP_STARTED, TRIP_COMPLETED, CANCEL)
+// 10. Booking Action State Machine (ACCEPT, ASSIGN_DRIVER, TRIP_STARTED, TRIP_COMPLETED, CANCEL)
 app.post('/api/bookings/:id/action', (req, res) => {
   const { id } = req.params;
-  const { action, actorRole, actorName, rating, reviewComment } = req.body;
+  const { action, actorRole, actorName, rating, reviewComment, driverName, driverPhone, driverLicense, driverRating } = req.body;
 
   const booking = store.bookings.find((b) => b.id === id);
   if (!booking) {
@@ -708,12 +779,67 @@ app.post('/api/bookings/:id/action', (req, res) => {
   if (action === 'ACCEPT') {
     booking.status = 'ACCEPTED';
     booking.payment.status = 'PENDING';
+    broadcastBookingNotification({
+      type: 'STATUS_UPDATE',
+      title: 'Booking Accepted by Fleet Operator',
+      message: `Your booking ${booking.id} has been accepted by ${booking.ownerName}. Preparing vehicle and assigning commercial chauffeur.`,
+      bookingId: booking.id,
+      status: 'ACCEPTED',
+      timestamp: new Date().toISOString(),
+      booking,
+    });
   } else if (action === 'CONFIRM_PAYMENT') {
     booking.status = 'CONFIRMED';
     booking.payment.status = 'PAID';
     booking.payment.paidAt = new Date().toISOString();
+    broadcastBookingNotification({
+      type: 'BOOKING_CONFIRMED',
+      title: 'Booking Confirmed!',
+      message: `Your ride ${booking.id} (${booking.pickup} ➔ ${booking.destination}) is confirmed. Payment received successfully.`,
+      bookingId: booking.id,
+      status: 'CONFIRMED',
+      timestamp: new Date().toISOString(),
+      booking,
+    });
+  } else if (action === 'ASSIGN_DRIVER') {
+    const assignedName = driverName || 'Suresh Chand Sharma';
+    const assignedPhone = driverPhone || '+91 98112 34567';
+    booking.driver = {
+      name: assignedName,
+      phone: assignedPhone,
+      licenseNumber: driverLicense || 'DL-0420190087654',
+      rating: Number(driverRating) || 4.9,
+      vehicleNumber: booking.vehicleNumber,
+      assignedAt: new Date().toISOString(),
+      liveStatus: 'ASSIGNED',
+    };
+    booking.status = 'DRIVER_ASSIGNED';
+
+    broadcastBookingNotification({
+      type: 'DRIVER_ASSIGNED',
+      title: 'Chauffeur Assigned to Your Ride!',
+      message: `${assignedName} (${assignedPhone}) has been assigned with ${booking.vehicleModel}. Verified commercial badge & 4.9★ rating.`,
+      bookingId: booking.id,
+      status: 'DRIVER_ASSIGNED',
+      timestamp: new Date().toISOString(),
+      booking,
+      driver: booking.driver,
+    });
   } else if (action === 'START_TRIP') {
     booking.status = 'TRIP_STARTED';
+    if (booking.driver) {
+      booking.driver.liveStatus = 'ON_TRIP';
+    }
+    broadcastBookingNotification({
+      type: 'TRIP_STARTED',
+      title: 'Trip Started — Safe Travels!',
+      message: `Trip ${booking.id} to ${booking.destination} is now in progress. Live speed and GPS tracking enabled.`,
+      bookingId: booking.id,
+      status: 'TRIP_STARTED',
+      timestamp: new Date().toISOString(),
+      booking,
+      driver: booking.driver,
+    });
   } else if (action === 'COMPLETE_TRIP') {
     booking.status = 'TRIP_COMPLETED';
     booking.completedAt = new Date().toISOString();
@@ -741,11 +867,30 @@ app.post('/api/bookings/:id/action', (req, res) => {
     if (vehicle) {
       vehicle.totalTrips = (vehicle.totalTrips || 0) + 1;
     }
+
+    broadcastBookingNotification({
+      type: 'TRIP_COMPLETED',
+      title: 'Destination Reached — Trip Completed!',
+      message: `Trip ${booking.id} reached ${booking.destination}. Your official GST tax invoice is available for download.`,
+      bookingId: booking.id,
+      status: 'TRIP_COMPLETED',
+      timestamp: new Date().toISOString(),
+      booking,
+    });
   } else if (action === 'CANCEL') {
     booking.status = 'CANCELLED';
     if (booking.payment.status === 'PAID') {
       booking.payment.status = 'REFUNDED';
     }
+    broadcastBookingNotification({
+      type: 'CANCELLED',
+      title: 'Booking Cancelled',
+      message: `Booking ${booking.id} has been cancelled. Any eligible refund has been queued.`,
+      bookingId: booking.id,
+      status: 'CANCELLED',
+      timestamp: new Date().toISOString(),
+      booking,
+    });
   } else if (action === 'RATE') {
     booking.rating = rating;
     booking.reviewComment = reviewComment;
@@ -759,6 +904,104 @@ app.post('/api/bookings/:id/action', (req, res) => {
     booking.id,
     `Booking ${booking.id} transitioned to ${booking.status}.`
   );
+
+  res.json({ success: true, booking });
+});
+
+// Dedicated endpoint to assign driver to a booking
+app.post('/api/bookings/:id/assign-driver', (req, res) => {
+  const { id } = req.params;
+  const { name, phone, licenseNumber, rating, vehicleNumber } = req.body;
+
+  const booking = store.bookings.find((b) => b.id === id);
+  if (!booking) {
+    return res.status(404).json({ error: 'Booking not found.' });
+  }
+
+  const driverData = {
+    name: name || 'Suresh Chand Sharma',
+    phone: phone || '+91 98112 34567',
+    licenseNumber: licenseNumber || 'DL-0420190087654',
+    rating: Number(rating) || 4.9,
+    vehicleNumber: vehicleNumber || booking.vehicleNumber,
+    assignedAt: new Date().toISOString(),
+    liveStatus: 'ASSIGNED' as const,
+  };
+
+  booking.driver = driverData;
+  booking.status = 'DRIVER_ASSIGNED';
+
+  logAuditEvent(
+    booking.ownerName,
+    'VEHICLE_OWNER',
+    'DRIVER_ASSIGNED',
+    'bookings',
+    booking.id,
+    `Driver ${driverData.name} (${driverData.phone}) assigned to booking ${booking.id}.`
+  );
+
+  broadcastBookingNotification({
+    type: 'DRIVER_ASSIGNED',
+    title: 'Driver Assigned!',
+    message: `${driverData.name} (${driverData.phone}) has been assigned with vehicle ${booking.vehicleModel} (${booking.vehicleNumber}).`,
+    bookingId: booking.id,
+    status: 'DRIVER_ASSIGNED',
+    timestamp: new Date().toISOString(),
+    booking,
+    driver: driverData,
+  });
+
+  res.json({ success: true, booking, driver: driverData });
+});
+
+// Quick testing endpoint to simulate booking events (confirmation, driver assignment, etc.)
+app.post('/api/bookings/:id/simulate-notification', (req, res) => {
+  const { id } = req.params;
+  const { type = 'CONFIRM_PAYMENT' } = req.body;
+
+  const booking = store.bookings.find((b) => b.id === id);
+  if (!booking) {
+    return res.status(404).json({ error: 'Booking not found.' });
+  }
+
+  if (type === 'CONFIRM_PAYMENT') {
+    booking.status = 'CONFIRMED';
+    booking.payment.status = 'PAID';
+    booking.payment.paidAt = new Date().toISOString();
+
+    broadcastBookingNotification({
+      type: 'BOOKING_CONFIRMED',
+      title: 'Booking Confirmed!',
+      message: `Trip ${booking.id} (${booking.pickup} ➔ ${booking.destination}) is confirmed. Payment verified via UPI / Gateway.`,
+      bookingId: booking.id,
+      status: 'CONFIRMED',
+      timestamp: new Date().toISOString(),
+      booking,
+    });
+  } else if (type === 'ASSIGN_DRIVER') {
+    const defaultDriver = {
+      name: 'Ramesh Singh Chauhan',
+      phone: '+91 98711 44520',
+      licenseNumber: 'DL-0420180099123',
+      rating: 4.9,
+      vehicleNumber: booking.vehicleNumber,
+      assignedAt: new Date().toISOString(),
+      liveStatus: 'ASSIGNED' as const,
+    };
+    booking.driver = defaultDriver;
+    booking.status = 'DRIVER_ASSIGNED';
+
+    broadcastBookingNotification({
+      type: 'DRIVER_ASSIGNED',
+      title: 'Commercial Chauffeur Assigned!',
+      message: `Chauffeur ${defaultDriver.name} (${defaultDriver.phone}) assigned to your trip with ${booking.vehicleModel}. Rated 4.9★ with commercial badge.`,
+      bookingId: booking.id,
+      status: 'DRIVER_ASSIGNED',
+      timestamp: new Date().toISOString(),
+      booking,
+      driver: defaultDriver,
+    });
+  }
 
   res.json({ success: true, booking });
 });
@@ -811,6 +1054,16 @@ app.post('/api/payments/verify-webhook', (req, res) => {
       booking.id,
       `Payment verified for booking ${booking.id}. Transaction ID: ${booking.payment.transactionId}. Amount: ₹${booking.fareBreakdown.finalCustomerFare}.`
     );
+
+    broadcastBookingNotification({
+      type: 'BOOKING_CONFIRMED',
+      title: 'Booking Confirmed!',
+      message: `Your booking ${booking.id} (${booking.pickup} ➔ ${booking.destination}) is confirmed. Payment verified via ${booking.payment.method || 'UPI'}.`,
+      bookingId: booking.id,
+      status: 'CONFIRMED',
+      timestamp: new Date().toISOString(),
+      booking,
+    });
 
     return res.json({ success: true, message: 'Payment verified and booking confirmed.', booking });
   } else {
