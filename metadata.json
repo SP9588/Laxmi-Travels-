@@ -1,0 +1,6 @@
+{
+  "name": "Laxmi Travels",
+  "description": "Commercial vehicle registration, document verification, travel booking and 10% platform commission accounting platform.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
