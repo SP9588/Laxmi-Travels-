@@ -10,14 +10,18 @@ import {
   Lock, 
   User, 
   Scale, 
-  Layers
+  Layers,
+  Radio,
+  AlertTriangle,
+  ShieldAlert
 } from 'lucide-react';
 
 interface NavbarProps {
-  activeTab: 'SEARCH' | 'BOOKINGS' | 'OWNER' | 'ADMIN' | 'LEGAL';
-  setActiveTab: (tab: 'SEARCH' | 'BOOKINGS' | 'OWNER' | 'ADMIN' | 'LEGAL') => void;
+  activeTab: 'SEARCH' | 'RADAR' | 'BOOKINGS' | 'OWNER' | 'ADMIN' | 'LEGAL';
+  setActiveTab: (tab: 'SEARCH' | 'RADAR' | 'BOOKINGS' | 'OWNER' | 'ADMIN' | 'LEGAL') => void;
   currentRole: UserRole;
   setCurrentRole: (role: UserRole) => void;
+  onOpenSOS?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -25,6 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   currentRole,
   setCurrentRole,
+  onOpenSOS,
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 text-white">
@@ -39,6 +44,16 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Role Switcher & Persona Simulator */}
         <div className="flex items-center gap-2">
+          {onOpenSOS && (
+            <button
+              id="top-banner-sos-button"
+              onClick={onOpenSOS}
+              className="flex sm:hidden items-center gap-1 px-2 py-0.5 rounded-full bg-red-600 hover:bg-red-700 text-white font-extrabold text-[10px] uppercase tracking-wider animate-pulse shadow-xs"
+            >
+              <AlertTriangle className="w-3 h-3 text-amber-300" />
+              <span>SOS</span>
+            </button>
+          )}
           <span className="text-slate-400 text-[11px] hidden sm:inline">Active Persona:</span>
           <div className="flex items-center bg-slate-800 p-0.5 rounded-lg border border-slate-700">
             <button
@@ -128,6 +143,19 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           <button
+            id="nav-tab-radar"
+            onClick={() => setActiveTab('RADAR')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition ${
+              activeTab === 'RADAR'
+                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <Radio className="w-4 h-4 text-amber-400 animate-pulse" />
+            <span>Maps & Radar</span>
+          </button>
+
+          <button
             id="nav-tab-bookings"
             onClick={() => setActiveTab('BOOKINGS')}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition ${
@@ -182,8 +210,24 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </nav>
 
-        {/* PWA Install Button */}
+        {/* Action Controls: SOS Emergency & PWA Install */}
         <div className="flex items-center gap-2">
+          {onOpenSOS && (
+            <button
+              id="nav-sos-button"
+              onClick={onOpenSOS}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-red-600/30 active:scale-95 transition group"
+              title="SOS Emergency — Instantly send live GPS location and vehicle details"
+            >
+              <div className="relative flex items-center justify-center">
+                <span className="animate-ping absolute inline-flex h-2.5 w-2.5 rounded-full bg-amber-400 opacity-75"></span>
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-300 relative inline-flex" />
+              </div>
+              <span className="font-extrabold tracking-wide">SOS</span>
+              <span className="hidden sm:inline text-[10px] text-rose-200 font-semibold lowercase">/ help</span>
+            </button>
+          )}
+
           <PWAInstallButton />
         </div>
       </div>

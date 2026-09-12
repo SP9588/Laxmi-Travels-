@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Booking, BookingNotification, DriverDetails } from '../types';
+import { Booking, BookingNotification, DriverDetails, BookingReview } from '../types';
 import { InvoiceModal } from './InvoiceModal';
 import { BookingToastContainer, playNotificationSound } from './BookingToast';
+import { BookingReviewModal } from './BookingReviewModal';
 import { 
   FileText, 
   Car, 
@@ -22,7 +23,10 @@ import {
   Sparkles,
   Radio,
   X,
-  Trash2
+  Trash2,
+  ThumbsUp,
+  ThumbsDown,
+  Check
 } from 'lucide-react';
 
 interface CustomerBookingsProps {
@@ -43,10 +47,8 @@ export const CustomerBookings: React.FC<CustomerBookingsProps> = ({ onGoToSearch
   const [highlightedBookingId, setHighlightedBookingId] = useState<string | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
 
-  // Rating modal state
-  const [ratingBooking, setRatingBooking] = useState<Booking | null>(null);
-  const [stars, setStars] = useState(5);
-  const [reviewText, setReviewText] = useState('');
+  // Review & Rating Modal state
+  const [reviewTargetBooking, setReviewTargetBooking] = useState<Booking | null>(null);
 
   const eventSourceRef = useRef<EventSource | null>(null);
 
@@ -227,7 +229,7 @@ export const CustomerBookings: React.FC<CustomerBookingsProps> = ({ onGoToSearch
   };
 
   // Quick testing simulator for instant user verification
-  const handleSimulateUpdate = async (type: 'CONFIRM_PAYMENT' | 'ASSIGN_DRIVER') => {
+  const handleSimulateUpdate = async (type: 'CONFIRM_PAYMENT' | 'ASSIGN_DRIVER' | 'COMPLETE_TRIP') => {
     if (bookings.length === 0) return;
     const targetBooking = bookings[0];
     setIsSimulating(true);
@@ -237,29 +239,11 @@ export const CustomerBookings: React.FC<CustomerBookingsProps> = ({ onGoToSearch
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type }),
       });
+      fetchBookings();
     } catch (err) {
       console.error('Failed to trigger simulated update:', err);
     } finally {
       setIsSimulating(false);
-    }
-  };
-
-  const handleRateRide = async () => {
-    if (!ratingBooking) return;
-    try {
-      await fetch(`/api/bookings/${ratingBooking.id}/action`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'RATE',
-          rating: stars,
-          reviewComment: reviewText,
-        }),
-      });
-      setRatingBooking(null);
-      fetchBookings();
-    } catch (err) {
-      console.error('Failed to submit rating:', err);
     }
   };
 
@@ -350,6 +334,15 @@ export const CustomerBookings: React.FC<CustomerBookingsProps> = ({ onGoToSearch
                 title="Simulate driver assignment toast alert"
               >
                 Assign Driver
+              </button>
+              <button
+                id="btn-test-complete-trip-toast"
+                onClick={() => handleSimulateUpdate('COMPLETE_TRIP')}
+                disabled={isSimulating}
+                className="px-2.5 py-1 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-900 font-bold text-[11px] transition"
+                title="Simulate reaching destination and trip completion"
+              >
+                Complete Trip
               </button>
             </div>
           )}
@@ -522,6 +515,128 @@ export const CustomerBookings: React.FC<CustomerBookingsProps> = ({ onGoToSearch
                   </div>
                 )}
 
+                {/* Post-Booking Passenger Feedback & Travel Review Display */}
+                {(booking.review || booking.rating) ? (
+                  <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/80 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex items-center gap-0.5 text-amber-500">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star
+                              key={s}
+                              className={`w-4 h-4 ${
+                                s <= (booking.review?.rating || booking.rating || 5)
+                                  ? 'fill-amber-400 text-amber-500'
+                                  : 'text-slate-200'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="font-extrabold text-xs text-slate-900">
+                          {booking.review?.rating || booking.rating}.0 / 5.0
+                        </span>
+                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
+                          Verified Passenger Review
+                        </span>
+                        {booking.review?.wouldRecommend && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                            <ThumbsUp className="w-2.5 h-2.5" />
+                            <span>Recommends Laxmi Travels</span>
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {booking.review?.reviewedAt && (
+                          <span className="text-[11px] text-slate-400 font-mono">
+                            {new Date(booking.review.reviewedAt).toLocaleDateString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        )}
+                        <button
+                          id={`btn-edit-review-${booking.id}`}
+                          onClick={() => setReviewTargetBooking(booking)}
+                          className="text-xs font-bold text-amber-700 hover:text-amber-800 underline ml-1"
+                        >
+                          Edit Review
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Review Comment Quote */}
+                    {(booking.review?.comment || booking.reviewComment) && (
+                      <div className="relative pl-3.5 border-l-2 border-amber-400 text-xs text-slate-700 italic font-normal leading-relaxed bg-white/70 p-2.5 rounded-r-xl">
+                        "{booking.review?.comment || booking.reviewComment}"
+                      </div>
+                    )}
+
+                    {/* Sub-Ratings & Compliment Tags */}
+                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                      {booking.review?.driverRating && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-700 font-medium shadow-2xs">
+                          <span>👨‍✈️ Driver:</span>
+                          <strong className="text-amber-600">{booking.review.driverRating}★</strong>
+                        </span>
+                      )}
+                      {booking.review?.vehicleCleanlinessRating && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-700 font-medium shadow-2xs">
+                          <span>🚗 Cleanliness:</span>
+                          <strong className="text-amber-600">{booking.review.vehicleCleanlinessRating}★</strong>
+                        </span>
+                      )}
+                      {booking.review?.punctualityRating && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-700 font-medium shadow-2xs">
+                          <span>⏱️ Punctuality:</span>
+                          <strong className="text-amber-600">{booking.review.punctualityRating}★</strong>
+                        </span>
+                      )}
+                      {booking.review?.acComfortRating && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-700 font-medium shadow-2xs">
+                          <span>❄️ AC Comfort:</span>
+                          <strong className="text-amber-600">{booking.review.acComfortRating}★</strong>
+                        </span>
+                      )}
+                      {booking.review?.tags?.map((tag) => (
+                        <span
+                          key={tag}
+                          className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-medium border border-slate-200"
+                        >
+                          ✓ {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : isCompleted ? (
+                  /* Prompt to rate completed trip */
+                  <div className="p-3.5 rounded-2xl bg-linear-to-r from-amber-50 to-orange-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center shrink-0 shadow-xs">
+                        <Star className="w-5 h-5 fill-slate-950 text-slate-950" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-xs text-slate-900 block">
+                          Trip Completed! How was your travel experience?
+                        </span>
+                        <span className="text-[11px] text-slate-600">
+                          Rate chauffeur professionalism, vehicle cleanliness, punctuality, and AC comfort.
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      id={`btn-rate-trip-prompt-${booking.id}`}
+                      onClick={() => setReviewTargetBooking(booking)}
+                      className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold shadow-xs transition flex items-center justify-center gap-1.5 shrink-0 active:scale-98"
+                    >
+                      <Star className="w-3.5 h-3.5 fill-slate-950" />
+                      <span>Rate Travel Experience</span>
+                    </button>
+                  </div>
+                ) : null}
+
                 {/* Card Actions: Invoice & Rating */}
                 <div className="flex items-center justify-between pt-1">
                   <div className="flex items-center gap-2">
@@ -534,24 +649,27 @@ export const CustomerBookings: React.FC<CustomerBookingsProps> = ({ onGoToSearch
                       <span>View Tax Invoice</span>
                     </button>
 
-                    {isCompleted && !booking.rating && (
+                    {!booking.rating && !booking.review && (
                       <button
-                        onClick={() => {
-                          setRatingBooking(booking);
-                          setStars(5);
-                        }}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold hover:bg-amber-100 transition"
+                        id={`btn-rate-ride-action-${booking.id}`}
+                        onClick={() => setReviewTargetBooking(booking)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold hover:bg-amber-100 transition"
                       >
-                        <Star className="w-3.5 h-3.5 text-amber-500" />
-                        <span>Rate Ride</span>
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                        <span>{isCompleted ? 'Rate Travel Experience' : 'Rate / Feedback'}</span>
                       </button>
                     )}
 
-                    {booking.rating && (
-                      <div className="flex items-center gap-1 text-xs text-amber-600 font-semibold bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
+                    {(booking.rating || booking.review) && (
+                      <button
+                        id={`btn-rated-badge-${booking.id}`}
+                        onClick={() => setReviewTargetBooking(booking)}
+                        className="flex items-center gap-1 text-xs text-amber-700 font-semibold bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-md border border-amber-200 transition cursor-pointer"
+                        title="Click to view or edit your review"
+                      >
                         <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                        <span>Rated {booking.rating}/5</span>
-                      </div>
+                        <span>Rated {booking.review?.rating || booking.rating}/5 ★ (Edit)</span>
+                      </button>
                     )}
                   </div>
 
@@ -653,58 +771,20 @@ export const CustomerBookings: React.FC<CustomerBookingsProps> = ({ onGoToSearch
         </div>
       )}
 
-      {/* Ride Rating Modal */}
-      {ratingBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
-            <h3 className="font-bold text-base text-slate-900">Rate Your Journey</h3>
-            <p className="text-xs text-slate-500">
-              Trip {ratingBooking.id} with {ratingBooking.vehicleModel}
-            </p>
-
-            <div className="flex justify-center gap-2 py-2">
-              {[1, 2, 3, 4, 5].map((num) => (
-                <button
-                  key={num}
-                  type="button"
-                  onClick={() => setStars(num)}
-                  className="p-1 hover:scale-110 transition"
-                >
-                  <Star
-                    className={`w-8 h-8 ${
-                      num <= stars
-                        ? 'fill-amber-400 text-amber-500'
-                        : 'text-slate-300'
-                    }`}
-                  />
-                </button>
-              ))}
-            </div>
-
-            <textarea
-              rows={3}
-              value={reviewText}
-              onChange={(e) => setReviewText(e.target.value)}
-              placeholder="Share your experience (driving safety, cleanliness, punctuality)..."
-              className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:outline-none focus:border-amber-500"
-            />
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => setRatingBooking(null)}
-                className="w-1/2 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-xl"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleRateRide}
-                className="w-1/2 py-2 text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 rounded-xl"
-              >
-                Submit Review
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Enhanced Post-Booking Feedback Rating & Review Modal */}
+      {reviewTargetBooking && (
+        <BookingReviewModal
+          booking={reviewTargetBooking}
+          existingReview={reviewTargetBooking.review}
+          onClose={() => setReviewTargetBooking(null)}
+          onReviewSubmitted={(updatedBooking) => {
+            setBookings((prev) =>
+              prev.map((b) => (b.id === updatedBooking.id ? updatedBooking : b))
+            );
+            setReviewTargetBooking(null);
+            fetchBookings();
+          }}
+        />
       )}
     </div>
   );

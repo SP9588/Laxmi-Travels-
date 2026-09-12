@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Vehicle, VehicleCategory, FareCalculation } from '../types';
+import { Vehicle, VehicleCategory, FareCalculation, Booking } from '../types';
+import { BookingModal } from './BookingModal';
 import { 
   MapPin, 
   Calendar, 
@@ -14,19 +15,27 @@ import {
   AlertCircle,
   Calculator,
   ChevronRight,
-  Info
+  Info,
+  Radio,
+  Navigation
 } from 'lucide-react';
 
 interface CustomerSearchProps {
-  onSelectVehicleForBooking: (vehicle: Vehicle, fare: FareCalculation) => void;
-  onSwitchToOwner: () => void;
+  onSelectVehicleForBooking?: (vehicle: Vehicle, fare: FareCalculation) => void;
+  onSwitchToOwner?: () => void;
+  onBookingSuccess?: (booking: Booking) => void;
+  onOpenRadar?: () => void;
+  initialPickup?: string;
 }
 
 export const CustomerSearch: React.FC<CustomerSearchProps> = ({
   onSelectVehicleForBooking,
   onSwitchToOwner,
+  onBookingSuccess,
+  onOpenRadar,
+  initialPickup,
 }) => {
-  const [pickup, setPickup] = useState('New Delhi');
+  const [pickup, setPickup] = useState(initialPickup || 'New Delhi');
   const [destination, setDestination] = useState('Jaipur');
   const [travelDate, setTravelDate] = useState(
     new Date(Date.now() + 86400000).toISOString().split('T')[0]
@@ -42,6 +51,16 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
 
   const [approvedVehicles, setApprovedVehicles] = useState<Vehicle[]>([]);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
+  const [selectedVehicleForModal, setSelectedVehicleForModal] = useState<{
+    vehicle: Vehicle;
+    fare: FareCalculation;
+  } | null>(null);
+
+  useEffect(() => {
+    if (initialPickup) {
+      setPickup(initialPickup);
+    }
+  }, [initialPickup]);
 
   // Fetch approved vehicles
   const fetchApprovedVehicles = async () => {
@@ -109,6 +128,37 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
 
   return (
     <div className="space-y-8">
+      {/* Google Maps & Location Radar Quick Connect Banner */}
+      {onOpenRadar && (
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-700/80 rounded-2xl p-4 text-white shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <Radio className="w-5 h-5 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-white">Google Maps & Location Radar Active</h3>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  Real-time
+                </span>
+              </div>
+              <p className="text-xs text-slate-300">
+                Scan automated radius, locate online corporate buyers, hotel concierges, and end-users able for dispatch.
+              </p>
+            </div>
+          </div>
+
+          <button
+            id="btn-switch-to-radar-from-search"
+            onClick={onOpenRadar}
+            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0 active:scale-95"
+          >
+            <Navigation className="w-3.5 h-3.5" />
+            <span>Open Maps Radar</span>
+          </button>
+        </div>
+      )}
+
       {/* Interactive Trip Form & Live Fare Engine */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="bg-slate-900 text-white p-5 border-b border-slate-800">
@@ -498,7 +548,13 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
 
                       <button
                         id={`btn-book-vehicle-${vehicle.id}`}
-                        onClick={() => onSelectVehicleForBooking(vehicle, currentVehicleFare)}
+                        onClick={() => {
+                          if (onSelectVehicleForBooking) {
+                            onSelectVehicleForBooking(vehicle, currentVehicleFare);
+                          } else {
+                            setSelectedVehicleForModal({ vehicle, fare: currentVehicleFare });
+                          }
+                        }}
                         className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-sm transition active:scale-95"
                       >
                         <span>Book Ride</span>
@@ -512,6 +568,19 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
           </div>
         )}
       </div>
+
+      {/* Embedded Booking Modal */}
+      {selectedVehicleForModal && (
+        <BookingModal
+          vehicle={selectedVehicleForModal.vehicle}
+          fareCalc={selectedVehicleForModal.fare}
+          onClose={() => setSelectedVehicleForModal(null)}
+          onBookingSuccess={(booking) => {
+            setSelectedVehicleForModal(null);
+            if (onBookingSuccess) onBookingSuccess(booking);
+          }}
+        />
+      )}
     </div>
   );
 };

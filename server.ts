@@ -31,9 +31,12 @@ interface ServerStore {
   users: any[];
   vehicles: any[];
   bookings: any[];
+  drivers: any[];
+  directoryEntities: any[];
   commissionTransactions: any[];
   ownerSettlements: any[];
   auditLogs: any[];
+  sosIncidents: any[];
   adminSettings: {
     commissionPercentage: number;
     qrDisplayName: string;
@@ -51,9 +54,253 @@ const store: ServerStore = {
   users: [],
   vehicles: [],
   bookings: [],
+  drivers: [
+    {
+      id: 'drv-01',
+      ownerId: 'owner-sim-01',
+      name: 'Ramesh Singh Chauhan',
+      phone: '+91 98711 44520',
+      email: 'ramesh.chauhan@laxmitravels.in',
+      emergencyContact: '+91 98110 55670 (Spouse)',
+      experienceYears: 8,
+      rating: 4.9,
+      totalTripsCompleted: 142,
+      status: 'AVAILABLE',
+      currentVehicleId: 'veh-commercial-01',
+      currentVehicleModel: 'Maruti Dzire Tour (Commercial)',
+      currentVehicleNumber: 'DL 1Z A 9876',
+      activeBookingId: undefined,
+      credentials: {
+        drivingLicense: {
+          docType: 'DRIVING_LICENSE',
+          docNumber: 'DL-0420180099123',
+          fileName: 'commercial_dl_ramesh.pdf',
+          expiryDate: '2029-08-15',
+          verified: true,
+          uploadedAt: '2026-08-01T10:00:00.000Z',
+        },
+        aadhaarCard: {
+          docType: 'AADHAAR_CARD',
+          docNumber: 'XXXX-XXXX-4819',
+          fileName: 'aadhaar_ramesh_chauhan.pdf',
+          verified: true,
+          uploadedAt: '2026-08-01T10:00:00.000Z',
+        },
+        policeVerification: {
+          docType: 'POLICE_VERIFICATION',
+          docNumber: 'PV-DL-2026-88310',
+          fileName: 'delhi_police_clearance.pdf',
+          expiryDate: '2027-08-01',
+          verified: true,
+          uploadedAt: '2026-08-01T10:00:00.000Z',
+        },
+        psvBadge: {
+          docType: 'PSV_BADGE',
+          docNumber: 'PSV-DEL-55910',
+          fileName: 'psv_badge_commercial.pdf',
+          expiryDate: '2028-12-31',
+          verified: true,
+          uploadedAt: '2026-08-01T10:00:00.000Z',
+        },
+      },
+      createdAt: '2026-08-01T10:00:00.000Z',
+      updatedAt: '2026-08-01T10:00:00.000Z',
+    },
+    {
+      id: 'drv-02',
+      ownerId: 'owner-sim-01',
+      name: 'Sunil Kumar Sharma',
+      phone: '+91 99102 33451',
+      email: 'sunil.sharma@laxmitravels.in',
+      emergencyContact: '+91 98101 22340 (Brother)',
+      experienceYears: 6,
+      rating: 4.8,
+      totalTripsCompleted: 88,
+      status: 'AVAILABLE',
+      currentVehicleId: '',
+      currentVehicleModel: '',
+      currentVehicleNumber: '',
+      activeBookingId: undefined,
+      credentials: {
+        drivingLicense: {
+          docType: 'DRIVING_LICENSE',
+          docNumber: 'UP-1420190088741',
+          fileName: 'dl_sunil_sharma.pdf',
+          expiryDate: '2030-03-20',
+          verified: true,
+          uploadedAt: '2026-08-10T11:00:00.000Z',
+        },
+        aadhaarCard: {
+          docType: 'AADHAAR_CARD',
+          docNumber: 'XXXX-XXXX-9124',
+          fileName: 'aadhaar_sunil_sharma.pdf',
+          verified: true,
+          uploadedAt: '2026-08-10T11:00:00.000Z',
+        },
+        policeVerification: {
+          docType: 'POLICE_VERIFICATION',
+          docNumber: 'PV-UP-2026-11942',
+          fileName: 'noida_police_verification.pdf',
+          expiryDate: '2027-08-10',
+          verified: true,
+          uploadedAt: '2026-08-10T11:00:00.000Z',
+        },
+      },
+      createdAt: '2026-08-10T11:00:00.000Z',
+      updatedAt: '2026-08-10T11:00:00.000Z',
+    },
+  ],
+  directoryEntities: [
+    {
+      id: 'dir-ent-01',
+      name: 'DLF CyberCity Executive Mobility Desk',
+      category: 'CORPORATE_BUYER',
+      categoryLabel: 'Corporate Mobility Buyer',
+      contactPerson: 'Vikramaditya Sengupta',
+      phone: '+91 98101 23456',
+      email: 'traveldesk@cybercity-dlf.com',
+      city: 'Gurugram',
+      address: 'Building 10, DLF Cyber City, Phase II, Gurugram',
+      latitude: 28.4907,
+      longitude: 77.0898,
+      coverageRadiusKm: 35,
+      isOnline: true,
+      statusText: 'Active Corporate Buyer - Seeking Daily Sedans & Innovas',
+      totalTripsRequested: 48,
+      gstin: '06AAACD1928K1ZU',
+      notes: 'Priority morning corporate airport runs & Gurugram-Noida shuttles',
+      registeredAt: '2026-08-15T09:00:00.000Z',
+      lastActive: '2026-09-04T08:30:00.000Z',
+    },
+    {
+      id: 'dir-ent-02',
+      name: 'The Leela Palace Concierge & Guest Desk',
+      category: 'HOTEL_RECEIVER',
+      categoryLabel: 'Hotel Concierge Receiver',
+      contactPerson: 'Arun K. Pillai (Head Concierge)',
+      phone: '+91 98710 99881',
+      email: 'concierge.delhi@theleela.com',
+      city: 'New Delhi',
+      address: 'Diplomatic Enclave, Chanakyapuri, New Delhi',
+      latitude: 28.5824,
+      longitude: 77.1895,
+      coverageRadiusKm: 25,
+      isOnline: true,
+      statusText: 'Online Receiver - Ready to Receive Luxury & Premium Fleet',
+      totalTripsRequested: 82,
+      gstin: '07AAACT8819L1Z2',
+      notes: 'Requires yellow-plate verified cars only with uniformed chauffeurs',
+      registeredAt: '2026-08-01T10:00:00.000Z',
+      lastActive: '2026-09-04T10:15:00.000Z',
+    },
+    {
+      id: 'dir-ent-03',
+      name: 'Taj Mahal Hotel Front Dispatch',
+      category: 'HOTEL_RECEIVER',
+      categoryLabel: 'Hotel Concierge Receiver',
+      contactPerson: 'Meenakshi Sundaram',
+      phone: '+91 98200 11223',
+      email: 'dispatch.tajdelhi@tajhotels.com',
+      city: 'New Delhi',
+      address: 'Number 1, Mansingh Road, New Delhi',
+      latitude: 28.6052,
+      longitude: 77.2255,
+      coverageRadiusKm: 30,
+      isOnline: true,
+      statusText: 'Online Receiver - On-demand airport drops & Agra roundtrips',
+      totalTripsRequested: 65,
+      gstin: '07AAACT5544J1Z8',
+      notes: 'Daily Agra Samay express dispatch requests',
+      registeredAt: '2026-08-10T12:00:00.000Z',
+      lastActive: '2026-09-04T09:45:00.000Z',
+    },
+    {
+      id: 'dir-ent-04',
+      name: 'Rajasthan Heritage Tourism & B2B Hub',
+      category: 'TRAVEL_AGENT',
+      categoryLabel: 'B2B Travel Agent / Tour Operator',
+      contactPerson: 'Gajendra Singh Rathore',
+      phone: '+91 94140 88776',
+      email: 'gajendra@rajasthanheritagetours.in',
+      city: 'Jaipur',
+      address: 'MI Road, Near Ajmeri Gate, Jaipur',
+      latitude: 26.9189,
+      longitude: 75.8156,
+      coverageRadiusKm: 60,
+      isOnline: true,
+      statusText: 'Active Buyer - Weekend Jaipur-Delhi Golden Triangle bookings',
+      totalTripsRequested: 110,
+      gstin: '08AAACR4419P1ZW',
+      notes: 'Golden Triangle (Delhi-Jaipur-Agra) round-trip fleet aggregator',
+      registeredAt: '2026-08-05T14:30:00.000Z',
+      lastActive: '2026-09-04T10:50:00.000Z',
+    },
+    {
+      id: 'dir-ent-05',
+      name: 'Pooja Verma (Frequent Commuter)',
+      category: 'INDIVIDUAL_CUSTOMER',
+      categoryLabel: 'Individual Traveler / Passenger',
+      contactPerson: 'Pooja Verma',
+      phone: '+91 98112 33445',
+      email: 'pooja.verma.tech@gmail.com',
+      city: 'Noida',
+      address: 'Sector 62, Near Electronic City Metro, Noida',
+      latitude: 28.6258,
+      longitude: 77.3695,
+      coverageRadiusKm: 15,
+      isOnline: true,
+      statusText: 'Online Passenger - Searching rides to IGI Airport T3',
+      totalTripsRequested: 14,
+      notes: 'Regular airport commuter, prefers clean AC Sedans',
+      registeredAt: '2026-08-20T16:00:00.000Z',
+      lastActive: '2026-09-04T10:40:00.000Z',
+    },
+    {
+      id: 'dir-ent-06',
+      name: 'Aditya Mathur (Executive Individual)',
+      category: 'INDIVIDUAL_CUSTOMER',
+      categoryLabel: 'Individual Traveler / Passenger',
+      contactPerson: 'Aditya Mathur',
+      phone: '+91 97170 55667',
+      email: 'aditya.mathur@consultant.in',
+      city: 'New Delhi',
+      address: 'Vasant Vihar, Block C, New Delhi',
+      latitude: 28.5583,
+      longitude: 77.1614,
+      coverageRadiusKm: 20,
+      isOnline: true,
+      statusText: 'Online Passenger - Looking for Delhi-Chandigarh One Way',
+      totalTripsRequested: 9,
+      notes: 'Needs quiet ride with verified commercial chauffeur',
+      registeredAt: '2026-08-25T11:20:00.000Z',
+      lastActive: '2026-09-04T09:10:00.000Z',
+    },
+    {
+      id: 'dir-ent-07',
+      name: 'Jaipur Blue Pottery & Gem Exports',
+      category: 'COMMERCIAL_BUSINESS',
+      categoryLabel: 'Commercial Enterprise / Shipper',
+      contactPerson: 'Dinesh Khandelwal',
+      phone: '+91 98290 77112',
+      email: 'logistics@jaipurgems-export.com',
+      city: 'Jaipur',
+      address: 'Johari Bazaar, Pink City, Jaipur',
+      latitude: 26.9204,
+      longitude: 75.8272,
+      coverageRadiusKm: 50,
+      isOnline: false,
+      statusText: 'Offline - Operating business hours 10 AM to 8 PM',
+      totalTripsRequested: 32,
+      gstin: '08AAACJ7788Q1ZP',
+      notes: 'Delegation and artisan transport to Delhi Trade Fairs',
+      registeredAt: '2026-08-18T10:00:00.000Z',
+      lastActive: '2026-09-03T18:00:00.000Z',
+    },
+  ],
   commissionTransactions: [],
   ownerSettlements: [],
   auditLogs: [],
+  sosIncidents: [],
   adminSettings: {
     commissionPercentage: 10, // Platform/developer commission: 10% of final fare
     qrDisplayName: 'Laxmi Travels',
@@ -601,14 +848,15 @@ interface SSEClient {
 const sseClients: SSEClient[] = [];
 
 function broadcastBookingNotification(event: {
-  type: 'BOOKING_CONFIRMED' | 'DRIVER_ASSIGNED' | 'STATUS_UPDATE' | 'TRIP_STARTED' | 'TRIP_COMPLETED' | 'CANCELLED';
+  type: 'BOOKING_CONFIRMED' | 'DRIVER_ASSIGNED' | 'STATUS_UPDATE' | 'TRIP_STARTED' | 'TRIP_COMPLETED' | 'CANCELLED' | 'SOS_EMERGENCY_ALERT';
   title: string;
   message: string;
   bookingId: string;
   timestamp: string;
-  booking: any;
+  booking?: any;
   driver?: any;
   status?: string;
+  incident?: any;
 }) {
   const payloadString = `data: ${JSON.stringify(event)}\n\n`;
   for (let i = sseClients.length - 1; i >= 0; i--) {
@@ -892,8 +1140,46 @@ app.post('/api/bookings/:id/action', (req, res) => {
       booking,
     });
   } else if (action === 'RATE') {
-    booking.rating = rating;
-    booking.reviewComment = reviewComment;
+    const finalRating = Number(rating) || 5;
+    const finalComment = reviewComment || '';
+    const reviewData = {
+      rating: finalRating,
+      driverRating: req.body.driverRating ? Number(req.body.driverRating) : undefined,
+      vehicleCleanlinessRating: req.body.vehicleCleanlinessRating ? Number(req.body.vehicleCleanlinessRating) : undefined,
+      punctualityRating: req.body.punctualityRating ? Number(req.body.punctualityRating) : undefined,
+      acComfortRating: req.body.acComfortRating ? Number(req.body.acComfortRating) : undefined,
+      comment: finalComment,
+      tags: Array.isArray(req.body.tags) ? req.body.tags : [],
+      wouldRecommend: req.body.wouldRecommend !== undefined ? Boolean(req.body.wouldRecommend) : true,
+      reviewedAt: new Date().toISOString(),
+    };
+    booking.rating = finalRating;
+    booking.reviewComment = finalComment;
+    booking.review = reviewData;
+
+    if (req.body.markCompleted && booking.status !== 'TRIP_COMPLETED') {
+      booking.status = 'TRIP_COMPLETED';
+      booking.completedAt = new Date().toISOString();
+    }
+
+    // Blend into vehicle rating
+    const vehicle = store.vehicles.find((v) => v.id === booking.vehicleId);
+    if (vehicle) {
+      vehicle.rating = vehicle.rating
+        ? Number(((vehicle.rating * 4 + finalRating) / 5).toFixed(1))
+        : finalRating;
+    }
+
+    // Blend into driver rating
+    if (booking.driver && reviewData.driverRating) {
+      booking.driver.rating = Number((((booking.driver.rating || 4.9) * 4 + reviewData.driverRating) / 5).toFixed(1));
+      const matchedDriver = store.drivers.find(
+        (d) => d.phone === booking.driver?.phone || (d.name && booking.driver?.name && d.name.toLowerCase() === booking.driver.name.toLowerCase())
+      );
+      if (matchedDriver) {
+        matchedDriver.rating = Number((((matchedDriver.rating || 4.9) * 4 + reviewData.driverRating) / 5).toFixed(1));
+      }
+    }
   }
 
   logAuditEvent(
@@ -906,6 +1192,94 @@ app.post('/api/bookings/:id/action', (req, res) => {
   );
 
   res.json({ success: true, booking });
+});
+
+// Dedicated Passenger Feedback & Travel Review Endpoint
+app.post('/api/bookings/:id/review', (req, res) => {
+  const { id } = req.params;
+  const {
+    rating,
+    driverRating,
+    vehicleCleanlinessRating,
+    punctualityRating,
+    acComfortRating,
+    comment,
+    reviewComment,
+    tags,
+    wouldRecommend,
+    markCompleted,
+    actorName,
+  } = req.body;
+
+  const booking = store.bookings.find((b) => b.id === id);
+  if (!booking) {
+    return res.status(404).json({ error: 'Booking not found.' });
+  }
+
+  const finalRating = Math.min(5, Math.max(1, Number(rating) || 5));
+  const finalComment = comment || reviewComment || '';
+  const reviewData = {
+    rating: finalRating,
+    driverRating: driverRating ? Math.min(5, Math.max(1, Number(driverRating))) : undefined,
+    vehicleCleanlinessRating: vehicleCleanlinessRating ? Math.min(5, Math.max(1, Number(vehicleCleanlinessRating))) : undefined,
+    punctualityRating: punctualityRating ? Math.min(5, Math.max(1, Number(punctualityRating))) : undefined,
+    acComfortRating: acComfortRating ? Math.min(5, Math.max(1, Number(acComfortRating))) : undefined,
+    comment: finalComment,
+    tags: Array.isArray(tags) ? tags : [],
+    wouldRecommend: wouldRecommend !== undefined ? Boolean(wouldRecommend) : true,
+    reviewedAt: new Date().toISOString(),
+  };
+
+  booking.rating = finalRating;
+  booking.reviewComment = finalComment;
+  booking.review = reviewData;
+
+  if (markCompleted || booking.status !== 'TRIP_COMPLETED') {
+    booking.status = 'TRIP_COMPLETED';
+    if (!booking.completedAt) {
+      booking.completedAt = new Date().toISOString();
+    }
+  }
+
+  // Update vehicle rating
+  const vehicle = store.vehicles.find((v) => v.id === booking.vehicleId);
+  if (vehicle) {
+    vehicle.rating = vehicle.rating
+      ? Number(((vehicle.rating * 4 + finalRating) / 5).toFixed(1))
+      : finalRating;
+  }
+
+  // Update driver rating
+  if (booking.driver && reviewData.driverRating) {
+    booking.driver.rating = Number((((booking.driver.rating || 4.9) * 4 + reviewData.driverRating) / 5).toFixed(1));
+    const matchedDriver = store.drivers.find(
+      (d) => d.phone === booking.driver?.phone || (d.name && booking.driver?.name && d.name.toLowerCase() === booking.driver.name.toLowerCase())
+    );
+    if (matchedDriver) {
+      matchedDriver.rating = Number((((matchedDriver.rating || 4.9) * 4 + reviewData.driverRating) / 5).toFixed(1));
+    }
+  }
+
+  logAuditEvent(
+    actorName || booking.customerName || 'Passenger',
+    'CUSTOMER',
+    'BOOKING_REVIEWED',
+    'bookings',
+    booking.id,
+    `Passenger rated booking ${booking.id} with ${finalRating}★: "${finalComment || 'No comment provided'}"`
+  );
+
+  broadcastBookingNotification({
+    type: 'STATUS_UPDATE',
+    title: 'Travel Feedback Recorded',
+    message: `Thank you for rating trip ${booking.id} (${finalRating}★). Your review helps ensure passenger safety and fleet excellence.`,
+    bookingId: booking.id,
+    status: booking.status,
+    timestamp: new Date().toISOString(),
+    booking,
+  });
+
+  res.json({ success: true, booking, review: reviewData });
 });
 
 // Dedicated endpoint to assign driver to a booking
@@ -979,7 +1353,7 @@ app.post('/api/bookings/:id/simulate-notification', (req, res) => {
       booking,
     });
   } else if (type === 'ASSIGN_DRIVER') {
-    const defaultDriver = {
+    const driverData = req.body.driverData || {
       name: 'Ramesh Singh Chauhan',
       phone: '+91 98711 44520',
       licenseNumber: 'DL-0420180099123',
@@ -988,23 +1362,624 @@ app.post('/api/bookings/:id/simulate-notification', (req, res) => {
       assignedAt: new Date().toISOString(),
       liveStatus: 'ASSIGNED' as const,
     };
-    booking.driver = defaultDriver;
+    booking.driver = driverData;
     booking.status = 'DRIVER_ASSIGNED';
+
+    // Sync driver state in store.drivers
+    const matchedDriver = store.drivers.find(
+      (d) => d.phone === driverData.phone || d.name.toLowerCase() === driverData.name.toLowerCase()
+    );
+    if (matchedDriver) {
+      matchedDriver.status = 'ASSIGNED';
+      matchedDriver.activeBookingId = booking.id;
+      matchedDriver.currentVehicleNumber = booking.vehicleNumber;
+      matchedDriver.currentVehicleModel = booking.vehicleModel;
+    }
 
     broadcastBookingNotification({
       type: 'DRIVER_ASSIGNED',
       title: 'Commercial Chauffeur Assigned!',
-      message: `Chauffeur ${defaultDriver.name} (${defaultDriver.phone}) assigned to your trip with ${booking.vehicleModel}. Rated 4.9★ with commercial badge.`,
+      message: `Chauffeur ${driverData.name} (${driverData.phone}) assigned to your trip with ${booking.vehicleModel}. Rated 4.9★ with commercial badge.`,
       bookingId: booking.id,
       status: 'DRIVER_ASSIGNED',
       timestamp: new Date().toISOString(),
       booking,
-      driver: defaultDriver,
+      driver: driverData,
+    });
+  } else if (type === 'COMPLETE_TRIP') {
+    booking.status = 'TRIP_COMPLETED';
+    booking.completedAt = new Date().toISOString();
+
+    // Generate commission transaction if not already present
+    const existingTx = store.commissionTransactions.find((tx) => tx.bookingId === booking.id);
+    if (!existingTx) {
+      const commTx = {
+        id: 'TX-COMM-' + Date.now(),
+        bookingId: booking.id,
+        customerId: booking.customerId,
+        vehicleOwnerId: booking.ownerId,
+        vehicleId: booking.vehicleId,
+        distanceKm: booking.distanceKm,
+        finalCustomerFare: booking.fareBreakdown.finalCustomerFare,
+        commissionPercentage: booking.commission.percentage,
+        commissionAmount: booking.commission.developerCommission,
+        ownerAmount: booking.commission.ownerGrossShare,
+        paymentStatus: 'PAID',
+        settlementStatus: 'PENDING',
+        timestamp: new Date().toISOString(),
+      };
+      store.commissionTransactions.unshift(commTx);
+    }
+
+    broadcastBookingNotification({
+      type: 'TRIP_COMPLETED',
+      title: 'Destination Reached — Trip Completed!',
+      message: `Trip ${booking.id} reached ${booking.destination}. Rate your travel experience and download your official invoice.`,
+      bookingId: booking.id,
+      status: 'TRIP_COMPLETED',
+      timestamp: new Date().toISOString(),
+      booking,
     });
   }
 
   res.json({ success: true, booking });
 });
+
+// 10c. SOS Emergency Response & Dispatch API
+app.post('/api/emergency/sos', (req, res) => {
+  const {
+    latitude,
+    longitude,
+    accuracy,
+    addressText,
+    bookingId,
+    vehicleModel,
+    vehicleNumber,
+    driverName,
+    driverPhone,
+    passengerName,
+    passengerPhone,
+    emergencyContacts = [],
+    incidentNotes,
+  } = req.body;
+
+  const incidentId = 'SOS-' + Date.now().toString().slice(-6);
+  const lat = Number(latitude) || 28.6139;
+  const lng = Number(longitude) || 77.2090;
+  const googleMapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
+
+  const notifiedContacts = [
+    {
+      name: 'Laxmi Travels 24x7 Safety Desk',
+      phone: store.adminSettings.supportPhone || '+91 9279120271',
+      type: 'SUPPORT_TEAM',
+      status: 'SENT',
+    },
+    {
+      name: 'National Emergency Helpline',
+      phone: '112',
+      type: 'POLICE_112',
+      status: 'SENT',
+    },
+    ...emergencyContacts.map((c: any) => ({
+      name: c.name || 'Emergency Contact',
+      phone: c.phone || 'N/A',
+      type: 'REGISTERED_CONTACT',
+      status: 'SENT',
+    })),
+  ];
+
+  const incident = {
+    id: incidentId,
+    timestamp: new Date().toISOString(),
+    passengerName: passengerName || 'Passenger',
+    passengerPhone: passengerPhone || '+91 98112 33445',
+    bookingId: bookingId || (store.bookings[0]?.id || 'WALK_IN_PASSENGER'),
+    vehicleModel: vehicleModel || 'Commercial Fleet Vehicle',
+    vehicleNumber: vehicleNumber || 'DL 1Z A 9876',
+    driverName: driverName || 'Assigned Commercial Chauffeur',
+    driverPhone: driverPhone || '+91 98711 44520',
+    location: {
+      latitude: lat,
+      longitude: lng,
+      accuracy: accuracy || 15,
+      addressText: addressText || `Near GPS ${lat}, ${lng}`,
+      googleMapsUrl,
+    },
+    notifiedContacts,
+    status: 'DISPATCHED',
+    incidentNotes: incidentNotes || 'Emergency SOS broadcast triggered from client application.',
+  };
+
+  if (!store.sosIncidents) {
+    store.sosIncidents = [];
+  }
+  store.sosIncidents.unshift(incident);
+
+  // Log critical audit event
+  logAuditEvent(
+    passengerName || 'Passenger',
+    'EMERGENCY_DISPATCH',
+    'SOS_EMERGENCY_TRIGGERED',
+    'sosIncidents',
+    incidentId,
+    `CRITICAL SOS TRIGGERED! Vehicle: ${vehicleNumber} | Driver: ${driverName} | Location: ${lat}, ${lng}`
+  );
+
+  // Broadcast high-priority SSE notification to all connected clients
+  broadcastBookingNotification({
+    type: 'SOS_EMERGENCY_ALERT',
+    title: `🚨 EMERGENCY SOS DISPATCHED: ${incident.vehicleNumber}`,
+    message: `Passenger distress signal broadcasted! Vehicle: ${incident.vehicleModel} (${incident.vehicleNumber}) with Chauffeur ${incident.driverName}. Location: ${incident.location.addressText}`,
+    bookingId: incident.bookingId,
+    status: 'EMERGENCY_SOS',
+    timestamp: incident.timestamp,
+    incident,
+  });
+
+  res.json({
+    success: true,
+    incident,
+    dispatchedAt: incident.timestamp,
+    supportDesk: store.adminSettings.supportPhone,
+    nationalEmergency: '112',
+  });
+});
+
+app.get('/api/emergency/incidents', (req, res) => {
+  res.json({
+    success: true,
+    count: (store.sosIncidents || []).length,
+    incidents: store.sosIncidents || [],
+  });
+});
+
+// 10b. Driver Profiles & Credential Management APIs
+app.get('/api/drivers', (req, res) => {
+  // Sync live trip statuses
+  store.drivers.forEach((drv) => {
+    const activeBooking = store.bookings.find(
+      (b) =>
+        b.driver &&
+        (b.driver.phone === drv.phone || b.driver.name.toLowerCase() === drv.name.toLowerCase()) &&
+        (b.status === 'CONFIRMED' || b.status === 'DRIVER_ASSIGNED' || b.status === 'TRIP_STARTED')
+    );
+
+    if (activeBooking) {
+      drv.status = activeBooking.status === 'TRIP_STARTED' ? 'ON_TRIP' : 'ASSIGNED';
+      drv.activeBookingId = activeBooking.id;
+      drv.currentVehicleNumber = activeBooking.vehicleNumber;
+      drv.currentVehicleModel = activeBooking.vehicleModel;
+    } else if (drv.status === 'ASSIGNED' || drv.status === 'ON_TRIP') {
+      drv.status = 'AVAILABLE';
+      drv.activeBookingId = undefined;
+    }
+  });
+
+  res.json({ success: true, drivers: store.drivers });
+});
+
+// Register New Driver Profile
+app.post('/api/drivers', (req, res) => {
+  const {
+    name,
+    phone,
+    email,
+    emergencyContact,
+    experienceYears,
+    licenseNumber,
+    licenseExpiry,
+    licenseFileName,
+    aadhaarNumber,
+    aadhaarFileName,
+    policeVerificationNumber,
+    policeVerificationExpiry,
+    policeVerificationFileName,
+    psvBadgeNumber,
+    assignedVehicleId,
+  } = req.body;
+
+  if (!name || !phone || !licenseNumber) {
+    return res.status(400).json({ error: 'Driver name, phone, and driving license number are required.' });
+  }
+
+  // Check if driver with phone already exists
+  const existing = store.drivers.find((d) => d.phone === phone);
+  if (existing) {
+    return res.status(400).json({ error: 'A driver with this mobile number is already registered.' });
+  }
+
+  let assignedVeh = undefined;
+  if (assignedVehicleId) {
+    assignedVeh = store.vehicles.find((v) => v.id === assignedVehicleId);
+  }
+
+  const newDriver = {
+    id: 'drv-' + Date.now(),
+    ownerId: 'owner-sim-01',
+    name,
+    phone,
+    email: email || '',
+    emergencyContact: emergencyContact || '',
+    experienceYears: Number(experienceYears) || 3,
+    rating: 5.0,
+    totalTripsCompleted: 0,
+    status: 'AVAILABLE' as const,
+    currentVehicleId: assignedVeh?.id || '',
+    currentVehicleModel: assignedVeh?.model || '',
+    currentVehicleNumber: assignedVeh?.registrationNumber || '',
+    activeBookingId: undefined,
+    credentials: {
+      drivingLicense: {
+        docType: 'DRIVING_LICENSE' as const,
+        docNumber: licenseNumber,
+        fileName: licenseFileName || 'commercial_dl_uploaded.pdf',
+        expiryDate: licenseExpiry || '2030-12-31',
+        verified: true,
+        uploadedAt: new Date().toISOString(),
+      },
+      aadhaarCard: {
+        docType: 'AADHAAR_CARD' as const,
+        docNumber: aadhaarNumber || 'XXXX-XXXX-XXXX',
+        fileName: aadhaarFileName || 'aadhaar_card_uploaded.pdf',
+        verified: true,
+        uploadedAt: new Date().toISOString(),
+      },
+      policeVerification: {
+        docType: 'POLICE_VERIFICATION' as const,
+        docNumber: policeVerificationNumber || 'PV-' + Math.floor(100000 + Math.random() * 900000),
+        fileName: policeVerificationFileName || 'police_clearance_certificate.pdf',
+        expiryDate: policeVerificationExpiry || '2027-12-31',
+        verified: true,
+        uploadedAt: new Date().toISOString(),
+      },
+      psvBadge: psvBadgeNumber
+        ? {
+            docType: 'PSV_BADGE' as const,
+            docNumber: psvBadgeNumber,
+            fileName: 'psv_badge.pdf',
+            expiryDate: '2028-12-31',
+            verified: true,
+            uploadedAt: new Date().toISOString(),
+          }
+        : undefined,
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  store.drivers.unshift(newDriver);
+
+  logAuditEvent(
+    'Operator',
+    'VEHICLE_OWNER',
+    'DRIVER_REGISTERED',
+    'drivers',
+    newDriver.id,
+    `Driver ${newDriver.name} (${newDriver.phone}) registered with verified credentials DL ${licenseNumber}.`
+  );
+
+  res.status(201).json({ success: true, driver: newDriver });
+});
+
+// Update Driver Details / Assignment
+app.put('/api/drivers/:id', (req, res) => {
+  const { id } = req.params;
+  const driver = store.drivers.find((d) => d.id === id);
+  if (!driver) {
+    return res.status(404).json({ error: 'Driver profile not found.' });
+  }
+
+  const {
+    name,
+    phone,
+    email,
+    emergencyContact,
+    experienceYears,
+    status,
+    currentVehicleId,
+  } = req.body;
+
+  if (name) driver.name = name;
+  if (phone) driver.phone = phone;
+  if (email !== undefined) driver.email = email;
+  if (emergencyContact !== undefined) driver.emergencyContact = emergencyContact;
+  if (experienceYears !== undefined) driver.experienceYears = Number(experienceYears);
+  if (status && ['AVAILABLE', 'OFF_DUTY'].includes(status) && driver.status !== 'ON_TRIP') {
+    driver.status = status;
+  }
+
+  if (currentVehicleId !== undefined) {
+    if (!currentVehicleId) {
+      driver.currentVehicleId = '';
+      driver.currentVehicleModel = '';
+      driver.currentVehicleNumber = '';
+    } else {
+      const veh = store.vehicles.find((v) => v.id === currentVehicleId);
+      if (veh) {
+        driver.currentVehicleId = veh.id;
+        driver.currentVehicleModel = veh.model;
+        driver.currentVehicleNumber = veh.registrationNumber;
+      }
+    }
+  }
+
+  driver.updatedAt = new Date().toISOString();
+
+  logAuditEvent(
+    'Operator',
+    'VEHICLE_OWNER',
+    'DRIVER_UPDATED',
+    'drivers',
+    driver.id,
+    `Driver ${driver.name} details updated.`
+  );
+
+  res.json({ success: true, driver });
+});
+
+// Upload or replace driver credential document
+app.post('/api/drivers/:id/upload-credential', (req, res) => {
+  const { id } = req.params;
+  const { docType, docNumber, fileName, expiryDate } = req.body;
+
+  const driver = store.drivers.find((d) => d.id === id);
+  if (!driver) {
+    return res.status(404).json({ error: 'Driver profile not found.' });
+  }
+
+  const credentialKey =
+    docType === 'DRIVING_LICENSE'
+      ? 'drivingLicense'
+      : docType === 'AADHAAR_CARD'
+      ? 'aadhaarCard'
+      : docType === 'POLICE_VERIFICATION'
+      ? 'policeVerification'
+      : docType === 'PSV_BADGE'
+      ? 'psvBadge'
+      : 'medicalCertificate';
+
+  driver.credentials[credentialKey] = {
+    docType,
+    docNumber: docNumber || driver.credentials[credentialKey]?.docNumber || 'DOC-VERIFIED',
+    fileName: fileName || `${docType.toLowerCase()}_credential.pdf`,
+    expiryDate: expiryDate || '2029-12-31',
+    verified: true,
+    uploadedAt: new Date().toISOString(),
+  };
+
+  driver.updatedAt = new Date().toISOString();
+
+  logAuditEvent(
+    'Operator',
+    'VEHICLE_OWNER',
+    'CREDENTIAL_UPLOADED',
+    'drivers',
+    driver.id,
+    `Credential ${docType} uploaded for driver ${driver.name}.`
+  );
+
+  res.json({ success: true, driver, message: 'Credential document successfully verified and updated.' });
+});
+
+// Quick toggle driver availability (AVAILABLE <-> OFF_DUTY)
+app.post('/api/drivers/:id/toggle-status', (req, res) => {
+  const { id } = req.params;
+  const driver = store.drivers.find((d) => d.id === id);
+  if (!driver) {
+    return res.status(404).json({ error: 'Driver profile not found.' });
+  }
+
+  if (driver.status === 'ON_TRIP') {
+    return res.status(400).json({ error: 'Cannot toggle status while driver is actively on trip.' });
+  }
+
+  driver.status = driver.status === 'AVAILABLE' ? 'OFF_DUTY' : 'AVAILABLE';
+  driver.updatedAt = new Date().toISOString();
+
+  res.json({ success: true, driver });
+});
+
+// Delete Driver profile (only if not on trip)
+app.delete('/api/drivers/:id', (req, res) => {
+  const { id } = req.params;
+  const index = store.drivers.findIndex((d) => d.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: 'Driver profile not found.' });
+  }
+
+  if (store.drivers[index].status === 'ON_TRIP' || store.drivers[index].status === 'ASSIGNED') {
+    return res.status(400).json({ error: 'Cannot delete driver assigned to an active trip.' });
+  }
+
+  const deleted = store.drivers.splice(index, 1)[0];
+
+  logAuditEvent(
+    'Operator',
+    'VEHICLE_OWNER',
+    'DRIVER_REMOVED',
+    'drivers',
+    id,
+    `Driver ${deleted.name} removed from fleet.`
+  );
+
+  res.json({ success: true, message: 'Driver removed.' });
+});
+
+// ---------------------------------------------------------------------------
+// 10B. GOOGLE MAPS & LOCATION RADAR: BUSINESS & CUSTOMER DIRECTORY REGISTRATION
+// ---------------------------------------------------------------------------
+
+// Helper: Haversine distance in KM
+function haversineDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c * 10) / 10;
+}
+
+// GET all registered buyers, receivers, and individual customers
+app.get('/api/directory/entities', (req, res) => {
+  const { category, city, onlineOnly } = req.query;
+  let list = [...store.directoryEntities];
+
+  if (category && category !== 'ALL') {
+    list = list.filter((e) => e.category === category);
+  }
+  if (city) {
+    list = list.filter((e) => e.city.toLowerCase() === (city as string).toLowerCase());
+  }
+  if (onlineOnly === 'true') {
+    list = list.filter((e) => e.isOnline === true);
+  }
+
+  res.json({ success: true, entities: list, totalCount: list.length });
+});
+
+// POST: Register a new business or customer category
+app.post('/api/directory/register', (req, res) => {
+  const {
+    name,
+    category,
+    categoryLabel,
+    contactPerson,
+    phone,
+    email,
+    city,
+    address,
+    latitude,
+    longitude,
+    coverageRadiusKm,
+    isOnline,
+    gstin,
+    notes,
+    statusText,
+  } = req.body;
+
+  if (!name || !category || !phone) {
+    return res.status(400).json({ error: 'Name, Category, and Phone are required.' });
+  }
+
+  // Resolve coordinates if missing based on city
+  const cityKey = (city || 'delhi').toLowerCase().trim();
+  const matchedCoords = Object.entries(INDIAN_CITY_COORDINATES).find(([k]) => cityKey.includes(k))?.[1] || {
+    lat: 28.6139,
+    lng: 77.209,
+  };
+
+  const finalLat = typeof latitude === 'number' ? latitude : matchedCoords.lat + (Math.random() - 0.5) * 0.08;
+  const finalLng = typeof longitude === 'number' ? longitude : matchedCoords.lng + (Math.random() - 0.5) * 0.08;
+
+  const categoryLabelsMap: Record<string, string> = {
+    CORPORATE_BUYER: 'Corporate Mobility Buyer',
+    HOTEL_RECEIVER: 'Hotel Concierge Receiver',
+    INDIVIDUAL_CUSTOMER: 'Individual Traveler / Passenger',
+    TRAVEL_AGENT: 'B2B Travel Agent / Tour Operator',
+    COMMERCIAL_BUSINESS: 'Commercial Enterprise / Shipper',
+  };
+
+  const newEntity = {
+    id: 'dir-ent-' + Date.now(),
+    name,
+    category,
+    categoryLabel: categoryLabel || categoryLabelsMap[category] || 'Commercial Travel Partner',
+    contactPerson: contactPerson || name,
+    phone,
+    email: email || '',
+    city: city || 'New Delhi',
+    address: address || `${city || 'New Delhi'} Central Commercial Hub`,
+    latitude: Math.round(finalLat * 10000) / 10000,
+    longitude: Math.round(finalLng * 10000) / 10000,
+    coverageRadiusKm: Number(coverageRadiusKm) || 25,
+    isOnline: isOnline !== undefined ? Boolean(isOnline) : true,
+    statusText: statusText || (isOnline ? 'Online & Available in Radius' : 'Offline / Standard Hours'),
+    totalTripsRequested: 0,
+    gstin: gstin || '',
+    notes: notes || '',
+    registeredAt: new Date().toISOString(),
+    lastActive: new Date().toISOString(),
+  };
+
+  store.directoryEntities.unshift(newEntity);
+
+  logAuditEvent(
+    newEntity.name,
+    'CUSTOMER',
+    'DIRECTORY_ENTITY_REGISTERED',
+    'directoryEntities',
+    newEntity.id,
+    `Registered new ${newEntity.categoryLabel} (${newEntity.name}) in ${newEntity.city}.`
+  );
+
+  res.status(201).json({ success: true, entity: newEntity });
+});
+
+// POST: Toggle online / able status
+app.post('/api/directory/toggle-online/:id', (req, res) => {
+  const { id } = req.params;
+  const entity = store.directoryEntities.find((e) => e.id === id);
+  if (!entity) {
+    return res.status(404).json({ error: 'Directory entity not found.' });
+  }
+
+  entity.isOnline = !entity.isOnline;
+  entity.lastActive = new Date().toISOString();
+  entity.statusText = entity.isOnline ? 'Online & Ready in Radius' : 'Offline / Standby';
+
+  res.json({ success: true, entity });
+});
+
+// POST: Automated radius scanning across Google Maps coordinates
+app.post('/api/directory/scan-radius', (req, res) => {
+  const { centerLat, centerLng, radiusKm = 30, categoryFilter } = req.body;
+
+  const lat = typeof centerLat === 'number' ? centerLat : 28.6139;
+  const lng = typeof centerLng === 'number' ? centerLng : 77.209;
+  const rad = Number(radiusKm) || 30;
+
+  let candidates = [...store.directoryEntities];
+  if (categoryFilter && categoryFilter !== 'ALL') {
+    candidates = candidates.filter((c) => c.category === categoryFilter);
+  }
+
+  const results = candidates.map((ent) => {
+    const distanceKm = haversineDistanceKm(lat, lng, ent.latitude, ent.longitude);
+    const inRadius = distanceKm <= rad;
+    return {
+      ...ent,
+      distanceKm,
+      inRadius,
+      isAbleInRadius: inRadius && ent.isOnline,
+    };
+  });
+
+  const withinRadius = results.filter((r) => r.inRadius).sort((a, b) => a.distanceKm - b.distanceKm);
+
+  const summary = {
+    totalEntitiesEvaluated: candidates.length,
+    entitiesInRadius: withinRadius.length,
+    onlineAndAbleInRadius: withinRadius.filter((r) => r.isOnline).length,
+    buyersCount: withinRadius.filter((r) => r.category === 'CORPORATE_BUYER' || r.category === 'TRAVEL_AGENT').length,
+    receiversCount: withinRadius.filter((r) => r.category === 'HOTEL_RECEIVER').length,
+    individualCustomersCount: withinRadius.filter((r) => r.category === 'INDIVIDUAL_CUSTOMER').length,
+    scannedCenter: { lat, lng },
+    radiusKm: rad,
+  };
+
+  res.json({
+    success: true,
+    summary,
+    entities: withinRadius,
+  });
+});
+
 
 // 11. Payment Gateway Integration Architecture
 // Server-side order creation & webhook verification (Razorpay / Cashfree / UPI QR)

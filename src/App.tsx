@@ -7,14 +7,38 @@ import { CustomerBookings } from './components/CustomerBookings';
 import { OwnerDashboard } from './components/OwnerDashboard';
 import { AdminPortal } from './components/AdminPortal';
 import { LegalNotice } from './components/LegalNotice';
-import { ShieldCheck, Phone, Mail, MapPin, Heart } from 'lucide-react';
+import { LocationRadar } from './components/LocationRadar';
+import { SOSEmergencyModal } from './components/SOSEmergencyModal';
+import { ShieldCheck, Phone, Mail, MapPin, Heart, AlertTriangle } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'SEARCH' | 'BOOKINGS' | 'OWNER' | 'ADMIN' | 'LEGAL'>('SEARCH');
+  const [activeTab, setActiveTab] = useState<'SEARCH' | 'RADAR' | 'BOOKINGS' | 'OWNER' | 'ADMIN' | 'LEGAL'>('SEARCH');
   const [currentRole, setCurrentRole] = useState<UserRole>('CUSTOMER');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [prefilledPickup, setPrefilledPickup] = useState<string>('');
+  const [isSOSOpen, setIsSOSOpen] = useState<boolean>(false);
+  const [activeSOSBooking, setActiveSOSBooking] = useState<Booking | null>(null);
+
+  // Poll or retrieve most recent active booking for emergency vehicle context
+  React.useEffect(() => {
+    fetch('/api/bookings')
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          // Find an active trip or the latest booking
+          const active = data.find((b: Booking) => 
+            b.status === 'CONFIRMED' || b.status === 'DRIVER_ASSIGNED' || b.status === 'TRIP_STARTED'
+          ) || data[0];
+          setActiveSOSBooking(active);
+        }
+      })
+      .catch(() => {
+        // ignore fallback
+      });
+  }, [refreshTrigger, activeTab]);
 
   const handleBookingCompleted = (booking: Booking) => {
+    setActiveSOSBooking(booking);
     setActiveTab('BOOKINGS');
   };
 
@@ -30,6 +54,7 @@ export default function App() {
         setActiveTab={setActiveTab}
         currentRole={currentRole}
         setCurrentRole={setCurrentRole}
+        onOpenSOS={() => setIsSOSOpen(true)}
       />
 
       {/* Main View Area */}
@@ -44,8 +69,24 @@ export default function App() {
             }} />
 
             <div id="search-interface-container">
-              <CustomerSearch onBookingSuccess={handleBookingCompleted} />
+              <CustomerSearch
+                initialPickup={prefilledPickup}
+                onBookingSuccess={handleBookingCompleted}
+                onOpenRadar={() => setActiveTab('RADAR')}
+              />
             </div>
+          </div>
+        )}
+
+        {/* VIEW 1B: GOOGLE MAPS & LOCATION RADAR (FIND BUYERS, RECEIVERS & CUSTOMERS) */}
+        {activeTab === 'RADAR' && (
+          <div className="space-y-6">
+            <LocationRadar
+              onSelectEntityForTrip={(pickupAddress, customerName, customerPhone) => {
+                setPrefilledPickup(pickupAddress);
+                setActiveTab('SEARCH');
+              }}
+            />
           </div>
         )}
 
@@ -177,6 +218,36 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* Floating Top-Level Persistent SOS Emergency Button */}
+      <div className="fixed bottom-5 right-5 z-40 no-print flex flex-col items-end gap-2">
+        <button
+          id="floating-sos-button"
+          onClick={() => setIsSOSOpen(true)}
+          className="group relative flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-rose-800 text-white font-black text-xs uppercase tracking-wider shadow-2xl shadow-rose-900/50 hover:shadow-rose-600/60 active:scale-95 transition-all border-2 border-red-400/40"
+          title="SOS Emergency - Tap to transmit live coordinates & vehicle details to safety desk"
+        >
+          {/* Pulsing beacon waves */}
+          <span className="animate-ping absolute -inset-1 rounded-full bg-rose-500 opacity-40 group-hover:opacity-75"></span>
+          
+          <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-white/20">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-300" />
+          </div>
+          <span className="font-black text-sm tracking-widest text-white drop-shadow-xs">
+            SOS
+          </span>
+          <span className="hidden sm:inline-block pl-1 text-[10px] text-rose-200 font-bold border-l border-white/20 uppercase tracking-normal">
+            Emergency
+          </span>
+        </button>
+      </div>
+
+      {/* SOS Emergency Modal & Dispatcher */}
+      <SOSEmergencyModal
+        isOpen={isSOSOpen}
+        onClose={() => setIsSOSOpen(false)}
+        activeBooking={activeSOSBooking}
+      />
     </div>
   );
 }

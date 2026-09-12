@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Vehicle, Booking, DocumentRecord, DocumentType } from '../types';
+import { Vehicle, Booking, DocumentRecord, DocumentType, DriverRecord } from '../types';
 import { VehicleOnboardingWizard } from './VehicleOnboardingWizard';
+import { DriverProfile } from './DriverProfile';
 import { 
   Car, 
   Plus, 
@@ -14,7 +15,10 @@ import {
   Calendar,
   ChevronRight,
   Eye,
-  AlertCircle
+  AlertCircle,
+  UserCheck,
+  Send,
+  X
 } from 'lucide-react';
 
 interface OwnerDashboardProps {
@@ -24,24 +28,31 @@ interface OwnerDashboardProps {
 export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ onSwitchToAdminVerifier }) => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [drivers, setDrivers] = useState<DriverRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [selectedVehicleDocs, setSelectedVehicleDocs] = useState<Vehicle | null>(null);
+  const [activeTab, setActiveTab] = useState<'VEHICLES' | 'DRIVERS' | 'TRIPS'>('VEHICLES');
+  const [assigningBooking, setAssigningBooking] = useState<Booking | null>(null);
+  const [selectedDriverIdForAssign, setSelectedDriverIdForAssign] = useState<string>('');
 
   const fetchOwnerData = async () => {
     setIsLoading(true);
     try {
-      // Get all vehicles for this operator
-      const [resVehicles, resBookings] = await Promise.all([
+      // Get all vehicles, bookings, and drivers for this operator
+      const [resVehicles, resBookings, resDrivers] = await Promise.all([
         fetch('/api/vehicles'),
         fetch('/api/bookings'),
+        fetch('/api/drivers'),
       ]);
 
       const vData = await resVehicles.json();
       const bData = await resBookings.json();
+      const dData = await resDrivers.json();
 
       if (vData.success) setVehicles(vData.vehicles || []);
       if (bData.success) setBookings(bData.bookings || []);
+      if (dData.success) setDrivers(dData.drivers || []);
     } catch (err) {
       console.error('Error fetching owner data:', err);
     } finally {
@@ -142,6 +153,63 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ onSwitchToAdminV
         </div>
       </div>
 
+      {/* Navigation Tabs: Fleet Vehicles / Chauffeur Profiles / Trips */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
+        <button
+          id="tab-fleet-vehicles"
+          onClick={() => setActiveTab('VEHICLES')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition shrink-0 ${
+            activeTab === 'VEHICLES'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <Car className="w-4 h-4" />
+          <span>Fleet Vehicles ({vehicles.length})</span>
+        </button>
+
+        <button
+          id="tab-driver-profiles"
+          onClick={() => setActiveTab('DRIVERS')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition shrink-0 ${
+            activeTab === 'DRIVERS'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <UserCheck className="w-4 h-4 text-amber-500" />
+          <span>Chauffeur & Driver Profiles ({drivers.length})</span>
+          {drivers.some((d) => d.status === 'AVAILABLE') && (
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          )}
+        </button>
+
+        <button
+          id="tab-trips-dispatches"
+          onClick={() => setActiveTab('TRIPS')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition shrink-0 ${
+            activeTab === 'TRIPS'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <Clock className="w-4 h-4" />
+          <span>Dispatches & Bookings ({bookings.length})</span>
+        </button>
+      </div>
+
+      {/* DRIVER PROFILES TAB */}
+      {activeTab === 'DRIVERS' && (
+        <DriverProfile
+          vehicles={vehicles}
+          bookings={bookings}
+          onDriverUpdated={fetchOwnerData}
+        />
+      )}
+
+      {/* VEHICLES TAB */}
+      {activeTab === 'VEHICLES' && (
+        <>
       {/* ZERO-STATE: If 0 vehicles registered */}
       {vehicles.length === 0 && !isLoading ? (
         <div className="bg-white rounded-2xl border-2 border-dashed border-slate-300 p-10 text-center max-w-xl mx-auto shadow-xs">
@@ -280,95 +348,245 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ onSwitchToAdminV
           </div>
         </div>
       )}
+        </>
+      )}
 
-      {/* Operator Bookings & Trips Section */}
-      {bookings.length > 0 && (
-        <div className="space-y-4 pt-4 border-t border-slate-200">
-          <h3 className="text-base font-bold text-slate-900">
-            Assigned Passenger Booking Requests & Active Trips
-          </h3>
+      {/* TAB 3: DISPATCHES & BOOKINGS */}
+      {activeTab === 'TRIPS' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-bold text-slate-900">
+              Assigned Passenger Booking Requests & Active Trips ({bookings.length})
+            </h3>
+            <span className="text-xs text-slate-500">
+              Dispatch certified chauffeurs and track ride lifecycle
+            </span>
+          </div>
 
-          <div className="space-y-3">
-            {bookings.map((booking) => (
-              <div
-                key={booking.id}
-                className="bg-white rounded-xl border border-slate-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs"
-              >
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-mono font-bold text-xs text-slate-900">{booking.id}</span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-slate-100 text-slate-700">
-                      {booking.status.replace('_', ' ')}
-                    </span>
+          {bookings.length === 0 ? (
+            <div className="bg-white rounded-2xl border-2 border-dashed border-slate-300 p-8 text-center text-slate-500 text-xs">
+              No booking requests currently assigned to your fleet.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {bookings.map((booking) => (
+                <div
+                  key={booking.id}
+                  className="bg-white rounded-xl border border-slate-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs"
+                >
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-mono font-bold text-xs text-slate-900">{booking.id}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                        booking.status === 'TRIP_STARTED'
+                          ? 'bg-blue-100 text-blue-800'
+                          : booking.status === 'DRIVER_ASSIGNED'
+                          ? 'bg-amber-100 text-amber-900'
+                          : booking.status === 'TRIP_COMPLETED'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-slate-100 text-slate-700'
+                      }`}>
+                        {booking.status.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-600">
+                      Route: <strong>{booking.pickup}</strong> ➔ <strong>{booking.destination}</strong> ({booking.distanceKm} km)
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      Passenger: {booking.customerName} ({booking.customerPhone}) • Vehicle: {booking.vehicleModel} ({booking.vehicleNumber})
+                    </div>
+
+                    {/* Assigned Driver Badge */}
+                    {booking.driver && (
+                      <div className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold">
+                        <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Chauffeur: {booking.driver.name} ({booking.driver.phone})</span>
+                        {booking.driver.licenseNumber && (
+                          <span className="font-mono text-[10px] text-emerald-700">• DL: {booking.driver.licenseNumber}</span>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className="text-xs text-slate-600">
-                    Route: <strong>{booking.pickup}</strong> ➔ <strong>{booking.destination}</strong> ({booking.distanceKm} km)
-                  </div>
-                  <div className="text-xs text-slate-500">
-                    Passenger: {booking.customerName} ({booking.customerPhone})
+
+                  {/* Financial breakdown for operator */}
+                  <div className="text-right sm:text-right shrink-0">
+                    <div className="text-xs text-slate-500">
+                      Fare: ₹{booking.fareBreakdown.finalCustomerFare} • Comm (10%): -₹{booking.commission.developerCommission}
+                    </div>
+                    <div className="text-sm font-extrabold text-emerald-700">
+                      Your Net Share: ₹{booking.commission.ownerGrossShare}
+                    </div>
+
+                    {/* Trip lifecycle buttons */}
+                    <div className="flex items-center gap-2 mt-2 justify-end flex-wrap">
+                      {booking.status === 'REQUESTED' && (
+                        <button
+                          onClick={() => handleTripAction(booking.id, 'ACCEPT')}
+                          className="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg shadow-xs"
+                        >
+                          Accept Ride
+                        </button>
+                      )}
+                      {(booking.status === 'CONFIRMED' || booking.status === 'ACCEPTED') && (
+                        <button
+                          onClick={() => {
+                            setAssigningBooking(booking);
+                            const availableDriver = drivers.find((d) => d.status === 'AVAILABLE');
+                            if (availableDriver) {
+                              setSelectedDriverIdForAssign(availableDriver.id);
+                            } else if (drivers.length > 0) {
+                              setSelectedDriverIdForAssign(drivers[0].id);
+                            }
+                          }}
+                          className="px-3 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 text-xs font-bold rounded-lg flex items-center gap-1"
+                        >
+                          <UserCheck className="w-3.5 h-3.5" />
+                          <span>Assign Chauffeur</span>
+                        </button>
+                      )}
+                      {(booking.status === 'CONFIRMED' || booking.status === 'DRIVER_ASSIGNED') && (
+                        <button
+                          onClick={() => handleTripAction(booking.id, 'START_TRIP')}
+                          className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg"
+                        >
+                          Start Trip
+                        </button>
+                      )}
+                      {booking.status === 'TRIP_STARTED' && (
+                        <button
+                          onClick={() => handleTripAction(booking.id, 'COMPLETE_TRIP')}
+                          className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg"
+                        >
+                          Complete Trip & Finalize Fare
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
-                {/* Financial breakdown for operator */}
-                <div className="text-right sm:text-right shrink-0">
-                  <div className="text-xs text-slate-500">
-                    Fare: ₹{booking.fareBreakdown.finalCustomerFare} • Comm (10%): -₹{booking.commission.developerCommission}
-                  </div>
-                  <div className="text-sm font-extrabold text-emerald-700">
-                    Your Net Share: ₹{booking.commission.ownerGrossShare}
-                  </div>
-
-                  {/* Trip lifecycle buttons */}
-                  <div className="flex items-center gap-2 mt-2 justify-end flex-wrap">
-                    {booking.status === 'REQUESTED' && (
-                      <button
-                        onClick={() => handleTripAction(booking.id, 'ACCEPT')}
-                        className="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg shadow-xs"
-                      >
-                        Accept Ride
-                      </button>
-                    )}
-                    {(booking.status === 'CONFIRMED' || booking.status === 'ACCEPTED') && (
-                      <button
-                        onClick={async () => {
-                          await fetch(`/api/bookings/${booking.id}/assign-driver`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              name: 'Ramesh Singh Chauhan',
-                              phone: '+91 98711 44520',
-                              licenseNumber: 'DL-0420180099123',
-                              rating: 4.9,
-                              vehicleNumber: booking.vehicleNumber,
-                            }),
-                          });
-                          fetchOwnerData();
-                        }}
-                        className="px-3 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 text-xs font-bold rounded-lg"
-                      >
-                        Assign Chauffeur
-                      </button>
-                    )}
-                    {(booking.status === 'CONFIRMED' || booking.status === 'DRIVER_ASSIGNED') && (
-                      <button
-                        onClick={() => handleTripAction(booking.id, 'START_TRIP')}
-                        className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg"
-                      >
-                        Start Trip
-                      </button>
-                    )}
-                    {booking.status === 'TRIP_STARTED' && (
-                      <button
-                        onClick={() => handleTripAction(booking.id, 'COMPLETE_TRIP')}
-                        className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg"
-                      >
-                        Complete Trip & Finalize Fare
-                      </button>
-                    )}
-                  </div>
+      {/* Driver Assignment Modal */}
+      {assigningBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <UserCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-slate-900">Assign Chauffeur to Trip</h4>
+                  <p className="text-[11px] text-slate-500 font-mono">{assigningBooking.id}</p>
                 </div>
               </div>
-            ))}
+              <button
+                onClick={() => setAssigningBooking(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="text-xs bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-1">
+              <div className="font-semibold text-slate-800">
+                Route: {assigningBooking.pickup} ➔ {assigningBooking.destination}
+              </div>
+              <div className="text-slate-500">
+                Passenger: {assigningBooking.customerName} ({assigningBooking.customerPhone})
+              </div>
+              <div className="text-slate-500">
+                Vehicle: {assigningBooking.vehicleModel} ({assigningBooking.vehicleNumber})
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-700">
+                Select Registered Fleet Driver:
+              </label>
+              {drivers.length === 0 ? (
+                <div className="text-xs text-slate-500 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                  No drivers registered in fleet. Switch to the Driver Profiles tab to add chauffeurs with verified credentials.
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-52 overflow-y-auto">
+                  {drivers.map((drv) => {
+                    const isSelected = selectedDriverIdForAssign === drv.id;
+                    const isAvailable = drv.status === 'AVAILABLE';
+
+                    return (
+                      <div
+                        key={drv.id}
+                        onClick={() => setSelectedDriverIdForAssign(drv.id)}
+                        className={`p-3 rounded-xl border transition cursor-pointer flex items-center justify-between text-xs ${
+                          isSelected
+                            ? 'border-amber-500 bg-amber-50/60 ring-2 ring-amber-400/30'
+                            : 'border-slate-200 hover:border-slate-300 bg-white'
+                        }`}
+                      >
+                        <div>
+                          <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                            <span>{drv.name}</span>
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                              isAvailable
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-slate-100 text-slate-600'
+                            }`}>
+                              {drv.status}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                            {drv.phone} • DL: {drv.credentials.drivingLicense?.docNumber || 'Verified'}
+                          </div>
+                        </div>
+                        <span className="text-[11px] font-bold text-amber-600 shrink-0">
+                          {drv.rating || 5.0}★
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setAssigningBooking(null)}
+                className="px-3.5 py-1.5 rounded-xl text-slate-600 bg-slate-100 hover:bg-slate-200 font-semibold text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!selectedDriverIdForAssign}
+                onClick={async () => {
+                  const driverToAssign = drivers.find((d) => d.id === selectedDriverIdForAssign);
+                  if (!driverToAssign) return;
+
+                  await fetch(`/api/bookings/${assigningBooking.id}/assign-driver`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      name: driverToAssign.name,
+                      phone: driverToAssign.phone,
+                      licenseNumber: driverToAssign.credentials.drivingLicense?.docNumber || 'DL-VERIFIED',
+                      rating: driverToAssign.rating || 4.9,
+                      vehicleNumber: assigningBooking.vehicleNumber,
+                    }),
+                  });
+
+                  setAssigningBooking(null);
+                  fetchOwnerData();
+                }}
+                className="px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-xs disabled:opacity-50 transition"
+              >
+                Confirm Dispatch
+              </button>
+            </div>
           </div>
         </div>
       )}

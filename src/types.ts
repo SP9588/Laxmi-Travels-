@@ -144,6 +144,45 @@ export type PaymentStatus =
   | 'PARTIALLY_REFUNDED' 
   | 'SETTLED';
 
+export type DriverStatus = 'AVAILABLE' | 'ASSIGNED' | 'ON_TRIP' | 'OFF_DUTY';
+
+export interface DriverCredentialDoc {
+  docType: 'DRIVING_LICENSE' | 'AADHAAR_CARD' | 'POLICE_VERIFICATION' | 'PSV_BADGE' | 'MEDICAL_CERTIFICATE';
+  docNumber: string;
+  docUrl?: string;
+  fileName?: string;
+  expiryDate?: string;
+  verified: boolean;
+  uploadedAt: string;
+}
+
+export interface DriverRecord {
+  id: string;
+  ownerId: string;
+  name: string;
+  phone: string;
+  email?: string;
+  emergencyContact?: string;
+  experienceYears: number;
+  rating: number;
+  totalTripsCompleted: number;
+  status: DriverStatus;
+  currentVehicleId?: string;
+  currentVehicleModel?: string;
+  currentVehicleNumber?: string;
+  activeBookingId?: string;
+  credentials: {
+    drivingLicense: DriverCredentialDoc;
+    aadhaarCard: DriverCredentialDoc;
+    policeVerification: DriverCredentialDoc;
+    psvBadge?: DriverCredentialDoc;
+    medicalCertificate?: DriverCredentialDoc;
+  };
+  photoUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface DriverDetails {
   name: string;
   phone: string;
@@ -223,7 +262,20 @@ export interface Booking {
   completedAt?: string;
   rating?: number;
   reviewComment?: string;
+  review?: BookingReview;
   driver?: DriverDetails;
+}
+
+export interface BookingReview {
+  rating: number;
+  driverRating?: number;
+  vehicleCleanlinessRating?: number;
+  punctualityRating?: number;
+  acComfortRating?: number;
+  comment: string;
+  tags?: string[];
+  wouldRecommend?: boolean;
+  reviewedAt: string;
 }
 
 export interface CommissionTransaction {
@@ -287,3 +339,69 @@ export interface MonthlyCommissionSummary {
   peakDayLabel: string;
   dailyStats: DailyCommissionStat[];
 }
+
+export type BusinessCustomerCategory = 
+  | 'CORPORATE_BUYER' 
+  | 'HOTEL_RECEIVER' 
+  | 'INDIVIDUAL_CUSTOMER' 
+  | 'TRAVEL_AGENT' 
+  | 'COMMERCIAL_BUSINESS';
+
+export interface DirectoryEntity {
+  id: string;
+  name: string;
+  category: BusinessCustomerCategory;
+  categoryLabel: string;
+  contactPerson: string;
+  phone: string;
+  email: string;
+  city: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  coverageRadiusKm: number;
+  isOnline: boolean;
+  statusText: string;
+  totalTripsRequested: number;
+  gstin?: string;
+  notes?: string;
+  registeredAt: string;
+  lastActive: string;
+}
+
+export interface EmergencyContact {
+  id: string;
+  name: string;
+  relationship: string;
+  phone: string;
+  isPrimary?: boolean;
+}
+
+export interface SOSEmergencyIncident {
+  id: string;
+  timestamp: string;
+  passengerName: string;
+  passengerPhone: string;
+  bookingId?: string;
+  vehicleModel?: string;
+  vehicleNumber?: string;
+  driverName?: string;
+  driverPhone?: string;
+  location: {
+    latitude: number;
+    longitude: number;
+    accuracy?: number;
+    addressText?: string;
+    googleMapsUrl: string;
+  };
+  notifiedContacts: {
+    name: string;
+    phone: string;
+    type: 'SUPPORT_TEAM' | 'POLICE_112' | 'REGISTERED_CONTACT';
+    status: 'SENT' | 'FAILED';
+  }[];
+  status: 'DISPATCHED' | 'ACKNOWLEDGED' | 'RESOLVED';
+  incidentNotes?: string;
+}
+
+

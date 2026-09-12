@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Vehicle, DocumentType, DocumentRecord, AuditLog, CommissionTransaction, AdminSettings } from '../types';
+import { Vehicle, DocumentType, DocumentRecord, AuditLog, CommissionTransaction, AdminSettings, DirectoryEntity, BusinessCustomerCategory } from '../types';
 import { FinancialAnalytics } from './FinancialAnalytics';
 import { 
   ShieldCheck, 
@@ -18,7 +18,16 @@ import {
   Settings,
   AlertCircle,
   TrendingUp,
-  BarChart3
+  BarChart3,
+  Radio,
+  Building2,
+  Hotel,
+  User,
+  Search,
+  Phone,
+  MapPin,
+  PlusCircle,
+  Compass
 } from 'lucide-react';
 
 interface AdminPortalProps {
@@ -26,13 +35,16 @@ interface AdminPortalProps {
 }
 
 export const AdminPortal: React.FC<AdminPortalProps> = ({ onRefreshAllData }) => {
-  const [activeTab, setActiveTab] = useState<'VERIFICATION' | 'COMMISSION' | 'AUDIT' | 'SUPABASE' | 'SETTINGS'>('VERIFICATION');
+  const [activeTab, setActiveTab] = useState<'VERIFICATION' | 'COMMISSION' | 'DIRECTORY' | 'AUDIT' | 'SUPABASE' | 'SETTINGS'>('VERIFICATION');
   
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [financials, setFinancials] = useState<any>(null);
   const [commissionTransactions, setCommissionTransactions] = useState<CommissionTransaction[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [directoryEntities, setDirectoryEntities] = useState<DirectoryEntity[]>([]);
+  const [directoryFilter, setDirectoryFilter] = useState<string>('ALL');
+  const [directorySearch, setDirectorySearch] = useState<string>('');
 
   // Settings state
   const [commissionRate, setCommissionRate] = useState(10);
@@ -46,17 +58,19 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onRefreshAllData }) =>
 
   const fetchAdminData = async () => {
     try {
-      const [resVehicles, resFin, resLogs, resSchema] = await Promise.all([
+      const [resVehicles, resFin, resLogs, resSchema, resDir] = await Promise.all([
         fetch('/api/vehicles'),
         fetch('/api/admin/financials'),
         fetch('/api/admin/audit-logs'),
         fetch('/api/admin/supabase-schema'),
+        fetch('/api/directory/entities'),
       ]);
 
       const vData = await resVehicles.json();
       const fData = await resFin.json();
       const lData = await resLogs.json();
       const sData = await resSchema.text();
+      const dData = await resDir.json();
 
       if (vData.success) setVehicles(vData.vehicles || []);
       if (fData.success) {
@@ -65,9 +79,22 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onRefreshAllData }) =>
         if (fData.metrics?.commissionRate) setCommissionRate(fData.metrics.commissionRate);
       }
       if (lData.success) setAuditLogs(lData.logs || []);
+      if (dData.success) setDirectoryEntities(dData.entities || []);
       setSupabaseSchema(sData);
     } catch (err) {
       console.error('Error fetching admin data:', err);
+    }
+  };
+
+  const handleToggleEntityOnline = async (id: string) => {
+    try {
+      const res = await fetch(`/api/directory/toggle-online/${id}`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setDirectoryEntities(prev => prev.map(e => e.id === id ? { ...e, isOnline: data.entity.isOnline, statusText: data.entity.statusText } : e));
+      }
+    } catch (err) {
+      console.error('Failed to toggle directory status:', err);
     }
   };
 
@@ -221,6 +248,16 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onRefreshAllData }) =>
           >
             <TrendingUp className="w-3.5 h-3.5 text-amber-600" />
             <span>Financial Analytics & Commission</span>
+          </button>
+          <button
+            id="btn-tab-directory"
+            onClick={() => setActiveTab('DIRECTORY')}
+            className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+              activeTab === 'DIRECTORY' ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Radio className="w-3.5 h-3.5 text-blue-600" />
+            <span>Buyers & Receivers ({directoryEntities.length})</span>
           </button>
           <button
             onClick={() => setActiveTab('AUDIT')}
@@ -603,6 +640,153 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onRefreshAllData }) =>
                 </table>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* 2B. BUYERS & RECEIVERS DIRECTORY (GOOGLE MAPS & RADIUS RADAR) */}
+      {/* ------------------------------------------------------------- */}
+      {activeTab === 'DIRECTORY' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="p-5 bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold">Registered Commercial Buyers, Hotel Receivers & Passengers</h3>
+                  <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-mono">
+                    {directoryEntities.length} Total Records
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  Active directory of business customers, hotel concierge receiver desks, and individual end-users with radius and online/able status.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Search name, city, phone..."
+                    value={directorySearch}
+                    onChange={(e) => setDirectorySearch(e.target.value)}
+                    className="pl-8 pr-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs placeholder:text-slate-500 focus:outline-hidden focus:border-amber-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Category Filter Bar */}
+            <div className="p-3 bg-slate-50 border-b border-slate-200 flex flex-wrap gap-2 text-xs">
+              {[
+                { id: 'ALL', label: 'All Records' },
+                { id: 'CORPORATE_BUYER', label: 'Corporate Buyers' },
+                { id: 'HOTEL_RECEIVER', label: 'Hotel Receivers' },
+                { id: 'INDIVIDUAL_CUSTOMER', label: 'Individual Passengers' },
+                { id: 'TRAVEL_AGENT', label: 'B2B Travel Agents' },
+                { id: 'COMMERCIAL_BUSINESS', label: 'Commercial Business' },
+              ].map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setDirectoryFilter(c.id)}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${
+                    directoryFilter === c.id
+                      ? 'bg-slate-900 text-amber-400 font-bold'
+                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  {c.label} ({
+                    c.id === 'ALL'
+                      ? directoryEntities.length
+                      : directoryEntities.filter((e) => e.category === c.id).length
+                  })
+                </button>
+              ))}
+            </div>
+
+            {/* Records Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-200">
+                  <tr>
+                    <th className="py-3 px-4">Entity / Customer Name</th>
+                    <th className="py-3 px-4">Category</th>
+                    <th className="py-3 px-4">Location & Hub</th>
+                    <th className="py-3 px-4">Radius</th>
+                    <th className="py-3 px-4">Contact Info</th>
+                    <th className="py-3 px-4">Status & Radius Ability</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {directoryEntities
+                    .filter((ent) => {
+                      if (directoryFilter !== 'ALL' && ent.category !== directoryFilter) return false;
+                      if (!directorySearch) return true;
+                      const q = directorySearch.toLowerCase();
+                      return (
+                        ent.name.toLowerCase().includes(q) ||
+                        ent.city.toLowerCase().includes(q) ||
+                        ent.phone.toLowerCase().includes(q) ||
+                        ent.contactPerson?.toLowerCase().includes(q)
+                      );
+                    })
+                    .map((ent) => (
+                      <tr key={ent.id} className="hover:bg-slate-50">
+                        <td className="py-3 px-4">
+                          <div className="font-bold text-slate-900">{ent.name}</div>
+                          <div className="text-[10px] text-slate-400">{ent.contactPerson || 'Direct'}</div>
+                          {ent.gstin && (
+                            <div className="text-[10px] text-slate-500 font-mono">GST: {ent.gstin}</div>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-700">
+                            {ent.categoryLabel || ent.category}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="font-medium text-slate-800">{ent.city}</div>
+                          <div className="text-[10px] text-slate-400 truncate max-w-[180px]">{ent.address}</div>
+                        </td>
+                        <td className="py-3 px-4 font-mono font-semibold text-slate-700">
+                          {ent.coverageRadiusKm || 25} km
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="text-slate-800 font-mono">{ent.phone}</div>
+                          <div className="text-[10px] text-slate-400">{ent.email || '—'}</div>
+                        </td>
+                        <td className="py-3 px-4">
+                          {ent.isOnline ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              ONLINE & ABLE
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold">
+                              OFFLINE
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <button
+                            id={`btn-admin-toggle-online-${ent.id}`}
+                            onClick={() => handleToggleEntityOnline(ent.id)}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition ${
+                              ent.isOnline
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                : 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200'
+                            }`}
+                          >
+                            {ent.isOnline ? 'Set Offline' : 'Set Online'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
